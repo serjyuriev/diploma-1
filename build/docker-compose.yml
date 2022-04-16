@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:14.2
+    environment:
+      POSTGRES_DB: "gophermart"
+      POSTGRES_USER: "gopher"
+      POSTGRES_PASSWORD: "G0ph3R"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - .:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
