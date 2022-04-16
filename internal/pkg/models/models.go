@@ -11,3 +11,8 @@ type Order struct {
 }
 
 type Point int64
+
+type User struct {
+	Login    string
+	Password string
+}
