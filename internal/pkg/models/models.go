@@ -2,6 +2,11 @@ package models
 
 import "time"
 
+type Balance struct {
+	Current   Point
+	Withdrawn Point
+}
+
 type Order struct {
 	Number      string
 	Status      string
