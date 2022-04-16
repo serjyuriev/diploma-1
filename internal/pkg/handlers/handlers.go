@@ -47,29 +47,29 @@ func MakeHandlers(logger zerolog.Logger) (Handlers, error) {
 }
 
 func (h *handlers) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func (h *handlers) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func (h *handlers) GetUserWithdrawalsHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
