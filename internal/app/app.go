@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
+	"github.com/serjyuriev/diploma-1/internal/pkg/handlers"
 )
 
 type App interface {
@@ -12,14 +13,26 @@ type App interface {
 }
 
 type app struct {
-	logger zerolog.Logger
-	cfg    config.Config
+	cfg      config.Config
+	handlers handlers.Handlers
+	logger   zerolog.Logger
 }
 
 func NewApp() (App, error) {
+	logger := zerolog.New(os.Stdout).Level(zerolog.DebugLevel).Output(
+		zerolog.ConsoleWriter{
+			TimeFormat: "02-01-2006 15:04:05 MST",
+		},
+	)
+	handlers, err := handlers.MakeHandlers(logger)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("unable to make handlers")
+	}
+
 	return &app{
-		logger: zerolog.New(os.Stdout),
-		cfg:    config.GetConfig(),
+		cfg:      config.GetConfig(),
+		handlers: handlers,
+		logger:   logger,
 	}, nil
 }
 
