@@ -21,6 +21,7 @@ type postgres struct {
 }
 
 func NewPostgres(logger zerolog.Logger) (Repository, error) {
+	logger.Debug().Msg("initializing postgres repository")
 	return &postgres{
 		cfg:    config.GetConfig(),
 		db:     nil,
