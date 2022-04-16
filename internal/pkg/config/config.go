@@ -16,7 +16,7 @@ type Config struct {
 }
 
 var (
-	cfg  Config
+	cfg  *Config
 	once sync.Once
 )
 
@@ -24,7 +24,7 @@ var (
 // returning Config struct.
 func GetConfig() Config {
 	once.Do(func() {
-		cfg = Config{}
+		cfg = &Config{}
 		flag.StringVar(&cfg.RunAddress, "a", "localhost:8080", "address and port for starting service on")
 		flag.StringVar(&cfg.DatabaseUri, "d", "", "data source name")
 		flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
@@ -35,5 +35,5 @@ func GetConfig() Config {
 		}
 	})
 
-	return cfg
+	return *cfg
 }
