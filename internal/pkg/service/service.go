@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
+	"github.com/serjyuriev/diploma-1/internal/pkg/repository"
 )
 
 var (
@@ -22,12 +23,16 @@ type Service interface {
 type service struct {
 	config config.Config
 	logger zerolog.Logger
+	repo   repository.Repository
 }
 
-func NewService(logger zerolog.Logger) (Service, error) {
+func NewService(logger zerolog.Logger, repo repository.Repository) (Service, error) {
+	logger.Debug().Msg("initializing service")
+
 	return &service{
 		config: config.GetConfig(),
 		logger: logger,
+		repo:   repo,
 	}, nil
 }
 
