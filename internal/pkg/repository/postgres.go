@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
@@ -22,9 +24,15 @@ type postgres struct {
 
 func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	logger.Debug().Msg("initializing postgres repository")
+	cfg := config.GetConfig()
+	db, err := sql.Open("pgx", cfg.DatabaseUri)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open sql connection: %v", err)
+	}
+
 	return &postgres{
-		cfg:    config.GetConfig(),
-		db:     nil,
+		cfg:    cfg,
+		db:     db,
 		logger: logger,
 	}, nil
 }
