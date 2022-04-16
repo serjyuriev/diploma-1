@@ -1,9 +1,12 @@
 package app
 
 import (
+	"net/http"
 	"os"
 
+	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/handlers"
 )
@@ -37,5 +40,15 @@ func NewApp() (App, error) {
 }
 
 func (app *app) Start() error {
-	return nil
+	r := chi.NewRouter()
+	r.Post("/api/user/register", app.handlers.RegisterUserHandler)
+	r.Post("/api/user/login", app.handlers.LoginUserHandler)
+	r.Post("/api/user/orders", app.handlers.PostUserOrderHandler)
+	r.Get("/api/user/orders", app.handlers.GetUserOrdersHandler)
+	r.Get("/api/user/balance", app.handlers.GetUserBalanceHandler)
+	r.Post("/api/user/balance/withdraw", app.handlers.WithdrawUserPointsHandler)
+	r.Get("/api/user/balance/withdrawals", app.handlers.GetUserWithdrawalsHandler)
+
+	log.Info().Msgf("starting application on %s", app.cfg.RunAddress)
+	return http.ListenAndServe(app.cfg.RunAddress, r)
 }
