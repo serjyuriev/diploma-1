@@ -19,11 +19,11 @@ type app struct {
 }
 
 func NewApp() (App, error) {
-	logger := zerolog.New(os.Stdout).Level(zerolog.DebugLevel).Output(
-		zerolog.ConsoleWriter{
-			TimeFormat: "02-01-2006 15:04:05 MST",
-		},
-	)
+	output := zerolog.ConsoleWriter{
+		Out:        os.Stdout,
+		TimeFormat: "02-01-2006 15:04:05 MST",
+	}
+	logger := zerolog.New(output).With().Timestamp().Logger()
 	handlers, err := handlers.MakeHandlers(logger)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("unable to make handlers")
