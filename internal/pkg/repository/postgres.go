@@ -10,6 +10,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
+
+	"github.com/golang-migrate/migrate/v4"
+	psql "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var (
@@ -23,11 +27,27 @@ type postgres struct {
 }
 
 func NewPostgres(logger zerolog.Logger) (Repository, error) {
-	logger.Debug().Msg("initializing postgres repository")
 	cfg := config.GetConfig()
+	logger.Debug().Msg("preparing connection to psql")
 	db, err := sql.Open("pgx", cfg.DatabaseUri)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open sql connection: %v", err)
+	}
+
+	driver, err := psql.WithInstance(db, &psql.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create psql driver: %v", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file:///go/src/github.com/serjyuriev/diploma-1/scripts/migrations",
+		"gophermart", driver)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create migrations client: %v", err)
+	}
+
+	if err = m.Up(); err != nil {
+		return nil, fmt.Errorf("unable to perform up migration: %v", err)
 	}
 
 	return &postgres{
