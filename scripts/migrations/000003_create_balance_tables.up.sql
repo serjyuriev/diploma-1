@@ -2,7 +2,7 @@ CREATE SEQUENCE IF NOT EXISTS balance_journal_id_seq;
 CREATE TABLE IF NOT EXISTS balance_journal (
     id bigint NOT NULL DEFAULT nextval('balance_journal_id_seq'),
     type text NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (id)
 );
 
 CREATE SEQUENCE IF NOT EXISTS posting_id_seq;
