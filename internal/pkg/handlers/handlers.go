@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/rs/zerolog"
@@ -29,14 +30,12 @@ func MakeHandlers(logger zerolog.Logger) (Handlers, error) {
 
 	repo, err := repository.NewPostgres(logger)
 	if err != nil {
-		logger.Error().Msg("unable to initialize postgres repository")
-		return nil, err
+		return nil, fmt.Errorf("unable to initialize postgres repository: %v", err)
 	}
 
 	svc, err := service.NewService(logger, repo)
 	if err != nil {
-		logger.Error().Msg("unable to initialize new service")
-		return nil, err
+		return nil, fmt.Errorf("unable to create new service: %v", err)
 	}
 
 	return &handlers{
