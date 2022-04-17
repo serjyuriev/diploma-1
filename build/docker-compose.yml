@@ -2,6 +2,7 @@ version: "3.9"
 services:
   postgres:
     image: postgres:14.2
+    container_name: postgres
     environment:
       POSTGRES_DB: "gophermart"
       POSTGRES_USER: "gopher"
@@ -11,3 +12,14 @@ services:
       - .:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+  gophermart:
+    build:
+      context: .
+    container_name: gophermart
+    ports:
+      - 8080:8080
+    volumes:
+      - ..:/go/src/github.com/serjyuriev/diploma-1
+    working_dir: /go/src/github.com/serjyuriev/diploma-1/cmd/gophermart
+    depends_on:
+      - postgres
