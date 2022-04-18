@@ -40,15 +40,14 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file:///go/src/github.com/serjyuriev/diploma-1/scripts/migrations",
+		// TODO: add this to config
+		"file:///app/scripts/migrations",
 		"gophermart", driver)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create migrations client: %v", err)
 	}
 
-	if err = m.Up(); err != nil {
-		return nil, fmt.Errorf("unable to perform up migration: %v", err)
-	}
+	m.Up()
 
 	return &postgres{
 		cfg:    cfg,
