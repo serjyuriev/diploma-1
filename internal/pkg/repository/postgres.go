@@ -28,9 +28,10 @@ type postgres struct {
 
 func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	cfg := config.GetConfig()
-	logger.Debug().Msg("preparing connection to psql")
+	logger.Debug().Caller().Msg("preparing connection to psql")
 	db, err := sql.Open("pgx", cfg.DatabaseUri)
 	if err != nil {
+		logger.Error().Caller().Msg("unable to open sql connection")
 		return nil, fmt.Errorf("unable to open sql connection: %v", err)
 	}
 
@@ -57,7 +58,15 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 }
 
 func (p *postgres) InsertUser(ctx context.Context, user models.User) error {
-	return errNotImplemented
+	if _, err := p.db.Exec(
+		"INSERT INTO users (login, password) VALUES ($1, $2)",
+		user.Login,
+		user.Password,
+	); err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return fmt.Errorf("unable to execute query: %v", err)
+	}
+	return nil
 }
 
 func (p *postgres) SelectUser(ctx context.Context, user models.User) error {
