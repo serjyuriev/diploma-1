@@ -61,7 +61,7 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 }
 
 // InsertUser inserts provided user information into users table.
-func (p *postgres) InsertUser(ctx context.Context, user models.User) error {
+func (p *postgres) InsertUser(ctx context.Context, user *models.User) error {
 	p.logger.Debug().Caller().Msgf("inserting user '%s' in db", user.Login)
 
 	if _, err := p.db.Exec(
@@ -79,7 +79,7 @@ func (p *postgres) InsertUser(ctx context.Context, user models.User) error {
 }
 
 // SelectUser gathers user information from users table based on provided login.
-func (p *postgres) SelectUser(ctx context.Context, login string) (models.User, error) {
+func (p *postgres) SelectUser(ctx context.Context, login string) (*models.User, error) {
 	p.logger.Debug().Caller().Msgf("selecting user with login '%s'", login)
 
 	rows := p.db.QueryRow(
@@ -88,13 +88,13 @@ func (p *postgres) SelectUser(ctx context.Context, login string) (models.User, e
 	)
 	if rows.Err() != nil {
 		p.logger.Error().Caller().Msg("unable to execute query")
-		return models.User{}, rows.Err()
+		return nil, rows.Err()
 	}
 
-	var user models.User
+	user := new(models.User)
 	if err := rows.Scan(&user.Login, &user.Password); err != nil {
 		p.logger.Error().Caller().Msg("unable to scan query result")
-		return models.User{}, err
+		return nil, err
 	}
 
 	p.logger.Debug().Caller().Msgf("found user with login '%s'", user.Login)
