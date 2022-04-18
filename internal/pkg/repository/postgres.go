@@ -78,8 +78,28 @@ func (p *postgres) InsertUser(ctx context.Context, user models.User) error {
 	return nil
 }
 
-func (p *postgres) SelectUser(ctx context.Context, user models.User) error {
-	return errNotImplemented
+// SelectUser gathers user information from users table based on provided login.
+func (p *postgres) SelectUser(ctx context.Context, login string) (models.User, error) {
+	p.logger.Debug().Caller().Msgf("selecting user with login '%s'", login)
+
+	rows := p.db.QueryRow(
+		"SELECT login, password FROM users WHERE login = $1",
+		login,
+	)
+	if rows.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return models.User{}, rows.Err()
+	}
+
+	var user models.User
+	if err := rows.Scan(&user.Login, &user.Password); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result")
+		return models.User{}, err
+	}
+
+	p.logger.Debug().Caller().Msgf("found user with login '%s'", user.Login)
+
+	return user, nil
 }
 
 func (p *postgres) InsertOrder(ctx context.Context, number, userID string) error {
