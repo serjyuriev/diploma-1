@@ -1,10 +1,19 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt"
+)
 
 type Balance struct {
 	Current   Point
 	Withdrawn Point
+}
+
+type Claims struct {
+	jwt.StandardClaims
+	Username string `json:"username"`
 }
 
 type Order struct {
@@ -18,6 +27,6 @@ type Order struct {
 type Point int64
 
 type User struct {
-	Login    string
-	Password string
+	Login    string `json:"login"`
+	Password string `json:"password"`
 }
