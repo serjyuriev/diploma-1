@@ -25,6 +25,8 @@ type postgres struct {
 	logger zerolog.Logger
 }
 
+// NewPostgres creates new instance of PostgreSQL implementation
+// of Repository interface.
 func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	cfg := config.GetConfig()
 	logger.Debug().Caller().Msg("preparing connection to psql")
@@ -58,6 +60,7 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	}, nil
 }
 
+// InsertUser inserts provided user information into users table.
 func (p *postgres) InsertUser(ctx context.Context, user models.User) error {
 	p.logger.Debug().Caller().Msgf("inserting user '%s' in db", user.Login)
 
