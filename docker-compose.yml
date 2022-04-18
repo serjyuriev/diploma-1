@@ -10,16 +10,12 @@ services:
       PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
       - .:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
   gophermart:
     build:
+      dockerfile: Dockerfile
       context: .
     container_name: gophermart
     ports:
       - 8080:8080
-    volumes:
-      - ..:/go/src/github.com/serjyuriev/diploma-1
-    working_dir: /go/src/github.com/serjyuriev/diploma-1/cmd/gophermart
     depends_on:
       - postgres

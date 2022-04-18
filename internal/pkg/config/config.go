@@ -25,7 +25,7 @@ var (
 func GetConfig() Config {
 	once.Do(func() {
 		cfg = &Config{}
-		flag.StringVar(&cfg.RunAddress, "a", "localhost:8080", "address and port for starting service on")
+		flag.StringVar(&cfg.RunAddress, "a", "gophermart:8080", "address and port for starting service on")
 		flag.StringVar(&cfg.DatabaseUri, "d", "postgres://gopher:G0ph3R@postgres:5432/gophermart", "data source name")
 		flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
 		flag.Parse()
