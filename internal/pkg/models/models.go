@@ -13,7 +13,7 @@ type Balance struct {
 
 type Claims struct {
 	jwt.StandardClaims
-	Username string `json:"username"`
+	UserID int `json:"user_id"`
 }
 
 type Order struct {
@@ -27,6 +27,7 @@ type Order struct {
 type Point int64
 
 type User struct {
+	ID       int    `json:"id,omitempty"`
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }

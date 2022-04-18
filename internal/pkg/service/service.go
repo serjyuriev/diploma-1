@@ -92,7 +92,7 @@ func (svc *service) LoginUser(ctx context.Context, user *models.User) (string, e
 					ExpiresAt: time.Now().Add(svc.expireDuration).Unix(),
 					IssuedAt:  time.Now().Unix(),
 				},
-				Username: user.Login,
+				UserID: user.ID,
 			},
 		)
 
