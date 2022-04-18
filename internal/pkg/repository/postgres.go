@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/rs/zerolog"
@@ -32,12 +31,13 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	db, err := sql.Open("pgx", cfg.DatabaseUri)
 	if err != nil {
 		logger.Error().Caller().Msg("unable to open sql connection")
-		return nil, fmt.Errorf("unable to open sql connection: %v", err)
+		return nil, err
 	}
 
 	driver, err := psql.WithInstance(db, &psql.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to create psql driver: %v", err)
+		logger.Error().Caller().Msg("unable to create psql driver")
+		return nil, err
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
@@ -45,7 +45,8 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 		"file:///app/scripts/migrations",
 		"gophermart", driver)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create migrations client: %v", err)
+		logger.Error().Caller().Msg("unable to create migrations client")
+		return nil, err
 	}
 
 	m.Up()
@@ -58,14 +59,19 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 }
 
 func (p *postgres) InsertUser(ctx context.Context, user models.User) error {
+	p.logger.Debug().Caller().Msgf("inserting user '%s' in db", user.Login)
+
 	if _, err := p.db.Exec(
 		"INSERT INTO users (login, password) VALUES ($1, $2)",
 		user.Login,
 		user.Password,
 	); err != nil {
 		p.logger.Error().Caller().Msg("unable to execute query")
-		return fmt.Errorf("unable to execute query: %v", err)
+		return err
 	}
+
+	p.logger.Debug().Caller().Msgf("user '%s' was inserted", user.Login)
+
 	return nil
 }
 
