@@ -83,7 +83,7 @@ func (p *postgres) SelectUser(ctx context.Context, login string) (*models.User, 
 	p.logger.Debug().Caller().Msgf("selecting user with login '%s'", login)
 
 	rows := p.db.QueryRow(
-		"SELECT login, password FROM users WHERE login = $1",
+		"SELECT id, login, password FROM users WHERE login = $1",
 		login,
 	)
 	if rows.Err() != nil {
@@ -92,7 +92,7 @@ func (p *postgres) SelectUser(ctx context.Context, login string) (*models.User, 
 	}
 
 	user := new(models.User)
-	if err := rows.Scan(&user.Login, &user.Password); err != nil {
+	if err := rows.Scan(&user.ID, &user.Login, &user.Password); err != nil {
 		p.logger.Error().Caller().Msg("unable to scan query result")
 		return nil, err
 	}

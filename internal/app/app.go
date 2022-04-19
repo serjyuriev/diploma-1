@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/handlers"
+	"github.com/serjyuriev/diploma-1/internal/pkg/middleware"
 )
 
 type App interface {
@@ -40,6 +41,7 @@ func NewApp() (App, error) {
 
 func (app *app) Start() error {
 	r := chi.NewRouter()
+	r.Use(middleware.Auth)
 	r.Post("/api/user/register", app.handlers.RegisterUserHandler)
 	r.Post("/api/user/login", app.handlers.LoginUserHandler)
 	r.Post("/api/user/orders", app.handlers.PostUserOrderHandler)
