@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	RunAddress                string `env:"RUN_ADDRESS"`
-	DatabaseUri               string `env:"DATABASE_URI"`
+	DatabaseURI               string `env:"DATABASE_URI"`
 	AccrualSystemAddress      string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 	AccrualSystemSurveyPeriod int    `env:"ACCRUAL_SYSTEM_SURVEY_PERIOD" envDefault:"5"`
 }
@@ -25,8 +25,8 @@ var (
 func GetConfig() Config {
 	once.Do(func() {
 		cfg = &Config{}
-		flag.StringVar(&cfg.RunAddress, "a", "gophermart:8080", "address and port for starting service on")
-		flag.StringVar(&cfg.DatabaseUri, "d", "postgres://gopher:G0ph3R@postgres:5432/gophermart", "data source name")
+		flag.StringVar(&cfg.RunAddress, "a", "", "address and port for starting service on")
+		flag.StringVar(&cfg.DatabaseURI, "d", "", "data source name")
 		flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
 		flag.Parse()
 

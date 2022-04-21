@@ -31,7 +31,7 @@ type postgres struct {
 func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	cfg := config.GetConfig()
 	logger.Debug().Caller().Msg("preparing connection to psql")
-	db, err := sql.Open("pgx", cfg.DatabaseUri)
+	db, err := sql.Open("pgx", cfg.DatabaseURI)
 	if err != nil {
 		logger.Error().Caller().Msg("unable to open sql connection")
 		return nil, err
