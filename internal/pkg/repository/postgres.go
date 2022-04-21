@@ -144,8 +144,42 @@ func (p *postgres) SelectOrdersByUser(ctx context.Context, userID int) ([]*model
 	return orders, nil
 }
 
+// SelectBalanceByUser calculates amount of points currently
+// awailable to user and amount of already withdrawn points.
 func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models.Balance, error) {
-	return nil, errNotImplemented
+	p.logger.Debug().Caller().Msgf("calculating balance for user '%d'", userID)
+
+	b := new(models.Balance)
+
+	rows := p.db.QueryRow(
+		"SELECT SUM(amount) FROM posting WHERE user_id = $1;",
+		userID,
+	)
+	if err := rows.Scan(&b.Current); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result for current balance")
+		return nil, err
+	}
+	if rows.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query for current balance")
+		return nil, rows.Err()
+	}
+
+	rows = p.db.QueryRow(
+		"SELECT SUM(amount) FROM posting WHERE user_id = $1 AND journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
+		userID,
+	)
+	if err := rows.Scan(&b.Withdrawn); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result for withdrawn amount")
+		return nil, err
+	}
+	if rows.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query for withdrawn amount")
+		return nil, rows.Err()
+	}
+
+	p.logger.Debug().Caller().Msgf("calculated balance for user '%d'", userID)
+
+	return b, nil
 }
 
 func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64) error {
