@@ -107,6 +107,8 @@ func (p *postgres) InsertOrder(ctx context.Context, number, userID int) error {
 	return errNotImplemented
 }
 
+// SelectOrdersByUser gathers number, status, accrual
+// and time of uploaded of user with provided ID.
 func (p *postgres) SelectOrdersByUser(ctx context.Context, userID int) ([]*models.Order, error) {
 	p.logger.Debug().Caller().Msgf("selecting orders for user '%d'", userID)
 

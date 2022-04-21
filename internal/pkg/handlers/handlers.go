@@ -32,6 +32,7 @@ type handlers struct {
 	svc    service.Service
 }
 
+// MakeHandlers creates new instance of Handlers interface.
 func MakeHandlers(logger zerolog.Logger) (Handlers, error) {
 	logger.Debug().Caller().Msg("preparing handlers")
 

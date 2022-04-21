@@ -27,12 +27,14 @@ type Order struct {
 
 type Point int64
 
+// Float64 convert Point type value to float64.
 func (p Point) Float64() float64 {
 	x := float64(p)
 	x = x / 100
 	return x
 }
 
+// ToPoints converts float value to Point type.
 func ToPoints(f float64) Point {
 	return Point((f * 100) + 0.5)
 }
