@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/rs/zerolog"
@@ -102,22 +103,53 @@ func (p *postgres) SelectUser(ctx context.Context, login string) (*models.User, 
 	return user, nil
 }
 
-func (p *postgres) InsertOrder(ctx context.Context, number, userID string) error {
+func (p *postgres) InsertOrder(ctx context.Context, number, userID int) error {
 	return errNotImplemented
 }
 
-func (p *postgres) SelectOrdersByUser(ctx context.Context, userID string) ([]models.Order, error) {
+func (p *postgres) SelectOrdersByUser(ctx context.Context, userID int) ([]*models.Order, error) {
+	p.logger.Debug().Caller().Msgf("selecting orders for user '%d'", userID)
+
+	rows, err := p.db.Query(
+		"SELECT o.number, o.status, p.amount, o.uploaded_at FROM orders AS o JOIN posting AS p ON p.order_id = o.id AND p.user_id = o.user_id WHERE o.user_id = $1 ORDER BY uploaded_at ASC;",
+		userID,
+	)
+
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return nil, rows.Err()
+	}
+
+	orders := make([]*models.Order, 0)
+	for rows.Next() {
+		order := new(models.Order)
+		var unixUploaded int64
+		if err := rows.Scan(&order.Number, &order.Status, &order.Accrual, &unixUploaded); err != nil {
+			p.logger.Error().Caller().Msg("unable to scan query result")
+			return nil, err
+		}
+		order.UploadedAt = time.Unix(unixUploaded, 0)
+		orders = append(orders, order)
+	}
+
+	if rows.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return nil, rows.Err()
+	}
+
+	p.logger.Debug().Caller().Msgf("found %d orders for user '%d'", len(orders), userID)
+
+	return orders, nil
+}
+
+func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models.Balance, error) {
 	return nil, errNotImplemented
 }
 
-func (p *postgres) SelectBalanceByUser(ctx context.Context, userID string) (models.Balance, error) {
-	return models.Balance{}, errNotImplemented
-}
-
-func (p *postgres) UpdateBalance(ctx context.Context, userID string, amount float64) error {
+func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64) error {
 	return errNotImplemented
 }
 
-func (p *postgres) SelectWithdrawalsByUser(ctx context.Context, userID string) ([]models.Order, error) {
+func (p *postgres) SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*models.Order, error) {
 	return nil, errNotImplemented
 }
