@@ -123,7 +123,7 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID := r.Context().Value(ContextKey("user_id")).(int)
 	orders, err := h.repo.SelectOrdersByUser(r.Context(), userID)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to get user orders")
@@ -161,7 +161,7 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID := r.Context().Value(ContextKey("user_id")).(int)
 	b, err := h.repo.SelectBalanceByUser(r.Context(), userID)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to get user balance")
@@ -169,7 +169,12 @@ func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	json, err := json.Marshal(b)
+	res := getUserBalanceResponse{
+		Current:   b.Current.Float64(),
+		Withdrawn: b.Withdrawn.Float64(),
+	}
+
+	json, err := json.Marshal(res)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to marshal response")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -194,4 +199,9 @@ type getUserOrdersResponse struct {
 	Status     string  `json:"string"`
 	Accrual    float64 `json:"accrual"`
 	UploadedAt string  `json:"uploaded_at"`
+}
+
+type getUserBalanceResponse struct {
+	Current   float64 `json:"current"`
+	Withdrawn float64 `json:"withdrawn"`
 }
