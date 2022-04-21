@@ -33,6 +33,8 @@ func GetConfig() Config {
 		if err := env.Parse(cfg); err != nil {
 			log.Fatalf("unable to load values from environment variables: %v", err)
 		}
+
+		log.Printf("%v\n", cfg)
 	})
 
 	return *cfg
