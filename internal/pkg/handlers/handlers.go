@@ -123,7 +123,7 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(int)
+	userID := r.Context().Value("user_id").(int)
 	orders, err := h.repo.SelectOrdersByUser(r.Context(), userID)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to get user orders")
@@ -161,7 +161,24 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
+	userID := r.Context().Value("user_id").(int)
+	b, err := h.repo.SelectBalanceByUser(r.Context(), userID)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to get user balance")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	json, err := json.Marshal(b)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to marshal response")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(json)
 }
 
 func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Request) {
