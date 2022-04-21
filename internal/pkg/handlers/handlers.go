@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
@@ -119,7 +120,41 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
+	userID := r.Context().Value("userID").(int)
+	orders, err := h.repo.SelectOrdersByUser(r.Context(), userID)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to get user orders")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if len(orders) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	res := make([]getUserOrdersResponse, 0)
+	for _, order := range orders {
+		sr := getUserOrdersResponse{
+			Number:     order.Number,
+			Status:     order.Status,
+			Accrual:    order.Accrual.Float64(),
+			UploadedAt: order.UploadedAt.Format(time.RFC3339),
+		}
+
+		res = append(res, sr)
+	}
+
+	json, err := json.Marshal(res)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to marshal response")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(json)
 }
 
 func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,4 +167,11 @@ func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Requ
 
 func (h *handlers) GetUserWithdrawalsHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusMethodNotAllowed)
+}
+
+type getUserOrdersResponse struct {
+	Number     string  `json:"number"`
+	Status     string  `json:"string"`
+	Accrual    float64 `json:"accrual"`
+	UploadedAt string  `json:"uploaded_at"`
 }
