@@ -9,9 +9,9 @@ import (
 type Repository interface {
 	InsertUser(ctx context.Context, user *models.User) error
 	SelectUser(ctx context.Context, login string) (*models.User, error)
-	InsertOrder(ctx context.Context, number, userID string) error
-	SelectOrdersByUser(ctx context.Context, userID string) ([]models.Order, error)
-	SelectBalanceByUser(ctx context.Context, userID string) (models.Balance, error)
-	UpdateBalance(ctx context.Context, userID string, amount float64) error
-	SelectWithdrawalsByUser(ctx context.Context, userID string) ([]models.Order, error)
+	InsertOrder(ctx context.Context, number, userID int) error
+	SelectOrdersByUser(ctx context.Context, userID int) ([]*models.Order, error)
+	SelectBalanceByUser(ctx context.Context, userID int) (*models.Balance, error)
+	UpdateBalance(ctx context.Context, userID int, amount float64) error
+	SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*models.Order, error)
 }
