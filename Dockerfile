@@ -8,4 +8,4 @@ COPY . .
 
 RUN go build -o main ./cmd/gophermart
 
-CMD [ "/app/main" ]
+CMD [ "/app/main", "-a", "gophermart:8080", "-d", "postgres://gopher:G0ph3R@postgres:5432/gophermart" ]
