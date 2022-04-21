@@ -165,7 +165,7 @@ func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models
 	}
 
 	rows = p.db.QueryRow(
-		"SELECT SUM(amount) FROM posting WHERE user_id = $1 AND journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
+		"SELECT ABS(SUM(amount)) FROM posting WHERE user_id = $1 AND journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
 		userID,
 	)
 	if err := rows.Scan(&b.Withdrawn); err != nil {
