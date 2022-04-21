@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS orders (
     PRIMARY KEY (id),
     CONSTRAINT fk_user_id
       FOREIGN KEY(user_id)
-	    REFERENCES users(id)
+	      REFERENCES users(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS order_number_idx ON orders (number);
