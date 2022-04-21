@@ -7,8 +7,8 @@ import (
 )
 
 type Balance struct {
-	Current   Point
-	Withdrawn Point
+	Current   Point `json:"current"`
+	Withdrawn Point `json:"withdrawn"`
 }
 
 type Claims struct {
