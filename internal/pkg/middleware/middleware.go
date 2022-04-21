@@ -8,10 +8,15 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/serjyuriev/diploma-1/internal/pkg/handlers"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
 )
 
-var ErrInvalidAccessToken = errors.New("invalid access token")
+var (
+	contextKeyUID = handlers.ContextKey("user_id")
+
+	ErrInvalidAccessToken = errors.New("invalid access token")
+)
 
 func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +50,7 @@ func Auth(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "userID", userID)
+		ctx := context.WithValue(r.Context(), contextKeyUID, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

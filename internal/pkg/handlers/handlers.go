@@ -14,6 +14,8 @@ import (
 	"github.com/serjyuriev/diploma-1/internal/pkg/service"
 )
 
+type ContextKey string
+
 type Handlers interface {
 	RegisterUserHandler(w http.ResponseWriter, r *http.Request)
 	LoginUserHandler(w http.ResponseWriter, r *http.Request)
