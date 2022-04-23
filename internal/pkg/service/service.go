@@ -110,6 +110,8 @@ func (svc *service) CreateNewOrder(ctx context.Context, number, userID int) erro
 	return errNotImplemented
 }
 
+// WithdrawPoints checks if user has enough points
+// and then updates its balance.
 func (svc *service) WithdrawPoints(ctx context.Context, userID int, amount float64, order string) error {
 	svc.logger.Debug().Caller().Msgf("withdrawing %.2f points for order '%s' of user %d", amount, order, userID)
 
