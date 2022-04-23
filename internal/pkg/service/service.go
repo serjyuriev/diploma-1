@@ -16,14 +16,16 @@ import (
 
 var (
 	errNotImplemented = errors.New("method not implemented yet")
-	ErrNotRegistered  = errors.New("user with provided credentials isn't registered")
+
+	ErrNotEnoughPoints = errors.New("not enough points")
+	ErrNotRegistered   = errors.New("user with provided credentials isn't registered")
 )
 
 type Service interface {
 	RegisterUser(ctx context.Context, user *models.User) (string, error)
 	LoginUser(ctx context.Context, user *models.User) (string, error)
-	CreateNewOrder(ctx context.Context, number, userID string) error
-	WithdrawPoints(ctx context.Context, userID string, amount float64) error
+	CreateNewOrder(ctx context.Context, number, userID int) error
+	WithdrawPoints(ctx context.Context, userID int, amount float64, order string) error
 }
 
 type service struct {
@@ -104,10 +106,33 @@ func (svc *service) LoginUser(ctx context.Context, user *models.User) (string, e
 	return "", ErrNotRegistered
 }
 
-func (svc *service) CreateNewOrder(ctx context.Context, number, userID string) error {
+func (svc *service) CreateNewOrder(ctx context.Context, number, userID int) error {
 	return errNotImplemented
 }
 
-func (svc *service) WithdrawPoints(ctx context.Context, userID string, amount float64) error {
-	return errNotImplemented
+func (svc *service) WithdrawPoints(ctx context.Context, userID int, amount float64, order string) error {
+	svc.logger.Debug().Caller().Msgf("withdrawing %.2f points for order '%s' of user %d", amount, order, userID)
+
+	orderID, err := svc.repo.SelectOrderByNumber(ctx, order)
+	if err != nil {
+		svc.logger.Error().Caller().Msg("unable to find order with provided number")
+		return err
+	}
+
+	b, err := svc.repo.SelectBalanceByUser(ctx, userID)
+	if err != nil {
+		svc.logger.Error().Caller().Msg("unable to select user's balance from database")
+		return err
+	}
+
+	if b.Current.Float64() < amount {
+		return ErrNotEnoughPoints
+	}
+
+	if err := svc.repo.UpdateBalance(ctx, userID, amount, orderID); err != nil {
+		svc.logger.Error().Caller().Msg("unable to update user's balance in database")
+		return err
+	}
+
+	return nil
 }
