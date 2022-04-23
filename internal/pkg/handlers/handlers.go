@@ -119,7 +119,28 @@ func (h *handlers) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
+	userID := r.Context().Value(ContextKey("user_id")).(int)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to read request body")
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if err := h.svc.CreateNewOrder(r.Context(), string(body), userID); err != nil {
+		if errors.Is(err, service.ErrNotValidOrderNumber) {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+		} else if errors.Is(err, service.ErrOrderAddedByUser) {
+			w.WriteHeader(http.StatusOK)
+		} else if errors.Is(err, service.ErrOrderAddedByAnotherUser) {
+			w.WriteHeader(http.StatusConflict)
+		} else {
+			h.logger.Error().Caller().Msg("unable to create new order")
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
