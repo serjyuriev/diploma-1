@@ -187,7 +187,33 @@ func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
+	userID := r.Context().Value(ContextKey("user_id")).(int)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to read request body")
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	req := new(withdrawUserPointsRequest)
+	if err := json.Unmarshal(body, req); err != nil {
+		h.logger.Err(err).Caller().Msg("unable to unmarshal request body")
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.svc.WithdrawPoints(r.Context(), userID, req.Sum, req.OrderNumber); err != nil {
+		if errors.Is(err, service.ErrNotEnoughPoints) {
+			w.WriteHeader(http.StatusPaymentRequired)
+			return
+		} else {
+			h.logger.Err(err).Caller().Msg("unable to withdraw points")
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *handlers) GetUserWithdrawalsHandler(w http.ResponseWriter, r *http.Request) {
@@ -243,4 +269,9 @@ type getUserWithdrawalsResponse struct {
 	Number      string  `json:"number"`
 	Sum         float64 `json:"sum"`
 	ProcessedAt string  `json:"processed_at"`
+}
+
+type withdrawUserPointsRequest struct {
+	OrderNumber string  `json:"order"`
+	Sum         float64 `json:"sum"`
 }
