@@ -187,6 +187,34 @@ func (p *postgres) SelectOrdersByUser(ctx context.Context, userID int) ([]*model
 	return orders, nil
 }
 
+func (p *postgres) UpdateOrderStatus(ctx context.Context, number string, order *models.Order) error {
+	var (
+		err error
+	)
+	if order.Status == "PROCESSING" {
+		_, err = p.db.ExecContext(
+			ctx,
+			"UPDATE orders SET status = $1 WHERE number = $2;",
+			order.Status,
+			number,
+		)
+	} else {
+		_, err = p.db.ExecContext(
+			ctx,
+			"UPDATE orders SET status = $1, processed_at = $2 WHERE number = $3;",
+			order.Status,
+			order.ProcessedAt.Unix(),
+			number,
+		)
+	}
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to update order status")
+		return err
+	}
+
+	return nil
+}
+
 // SelectBalanceByUser calculates amount of points currently
 // awailable to user and amount of already withdrawn points.
 func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models.Balance, error) {
