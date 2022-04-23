@@ -207,7 +207,7 @@ func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models
 
 // UpdateBalance insert amount of withdrawn points into
 // posting table.
-func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64, order string) error {
+func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64, orderID int64) error {
 	p.logger.Debug().Caller().Msgf("withdrawing %.2f from user '%d'", amount, userID)
 
 	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
@@ -234,9 +234,9 @@ func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64
 
 	_, err = p.db.ExecContext(
 		ctx,
-		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES ($1, (SELECT id FROM orders WHERE number = $2), $3, $4);",
+		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES ($1, $2, $3, $4);",
 		userID,
-		order,
+		orderID,
 		id,
 		-models.ToPoints(amount),
 	)
@@ -261,8 +261,8 @@ func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64
 
 	_, err = p.db.ExecContext(
 		ctx,
-		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES (1, (SELECT id FROM orders WHERE number = $1), $2, $3);",
-		order,
+		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES (1, $1, $2, $3);",
+		orderID,
 		id,
 		models.ToPoints(amount),
 	)

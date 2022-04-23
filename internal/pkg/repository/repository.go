@@ -13,6 +13,6 @@ type Repository interface {
 	SelectOrderByNumber(ctx context.Context, number string) (int64, error)
 	SelectOrdersByUser(ctx context.Context, userID int) ([]*models.Order, error)
 	SelectBalanceByUser(ctx context.Context, userID int) (*models.Balance, error)
-	UpdateBalance(ctx context.Context, userID int, amount float64, order string) error
+	UpdateBalance(ctx context.Context, userID int, amount float64, orderID int64) error
 	SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*models.Order, error)
 }
