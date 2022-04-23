@@ -103,31 +103,49 @@ func (p *postgres) SelectUser(ctx context.Context, login string) (*models.User, 
 	return user, nil
 }
 
+// InsertOrder inserts new order info into orders table.
 func (p *postgres) InsertOrder(ctx context.Context, number string, userID int) error {
-	return errNotImplemented
+	p.logger.Debug().Caller().Msgf("inserting order '%s' in database", number)
+
+	if _, err := p.db.ExecContext(
+		ctx,
+		"INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)",
+		number,
+		userID,
+		"NEW",
+		time.Now().Unix(),
+	); err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return err
+	}
+
+	p.logger.Debug().Caller().Msgf("order '%s' was inserted", number)
+
+	return nil
 }
 
 // SelectOrderByNumber selects id of order with provided number
 // from orders table.
-func (p *postgres) SelectOrderByNumber(ctx context.Context, number string) (int64, error) {
+func (p *postgres) SelectOrderByNumber(ctx context.Context, number string) (*models.Order, error) {
 	p.logger.Debug().Caller().Msgf("selecting order with number '%s'", number)
 
 	row := p.db.QueryRowContext(
 		ctx,
-		"SELECT id FROM orders WHERE number = $1;",
+		"SELECT id, user_id FROM orders WHERE number = $1;",
 		number,
 	)
-	var id int64
-	if err := row.Scan(&id); err != nil {
+
+	order := new(models.Order)
+	if err := row.Scan(&order.ID, &order.UserID); err != nil {
 		p.logger.Error().Caller().Msg("unable to scan query result")
-		return 0, err
+		return nil, err
 	}
 	if row.Err() != nil {
 		p.logger.Error().Caller().Msg("unable to execute query")
-		return 0, row.Err()
+		return nil, row.Err()
 	}
 
-	return id, nil
+	return order, nil
 }
 
 // SelectOrdersByUser gathers number, status, accrual
