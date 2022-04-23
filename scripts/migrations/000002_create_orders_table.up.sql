@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS orders (
     number text NOT NULL UNIQUE,
     user_id integer NOT NULL,
     status text NOT NULL,
-    sum money NOT NULL,
     uploaded_at bigint NOT NULL,
     processed_at bigint,
     PRIMARY KEY (id),
