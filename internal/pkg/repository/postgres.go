@@ -103,8 +103,31 @@ func (p *postgres) SelectUser(ctx context.Context, login string) (*models.User, 
 	return user, nil
 }
 
-func (p *postgres) InsertOrder(ctx context.Context, number, userID int) error {
+func (p *postgres) InsertOrder(ctx context.Context, number string, userID int) error {
 	return errNotImplemented
+}
+
+// SelectOrderByNumber selects id of order with provided number
+// from orders table.
+func (p *postgres) SelectOrderByNumber(ctx context.Context, number string) (int64, error) {
+	p.logger.Debug().Caller().Msgf("selecting order with number '%s'", number)
+
+	row := p.db.QueryRowContext(
+		ctx,
+		"SELECT id FROM orders WHERE number = $1;",
+		number,
+	)
+	var id int64
+	if err := row.Scan(&id); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result")
+		return 0, err
+	}
+	if row.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return 0, row.Err()
+	}
+
+	return id, nil
 }
 
 // SelectOrdersByUser gathers number, status, accrual
