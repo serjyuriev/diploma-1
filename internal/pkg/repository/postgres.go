@@ -186,6 +186,38 @@ func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64
 	return errNotImplemented
 }
 
+// SelectWithdrawalsByUser gather order's number, sum and time of processing
+// for provided user ID.
 func (p *postgres) SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*models.Order, error) {
-	return nil, errNotImplemented
+	p.logger.Debug().Caller().Msgf("selecting withdrawals for user '%d'", userID)
+
+	rows, err := p.db.Query(
+		"SELECT o.number, ABS(p.amount), o.processed_at FROM orders AS o INNER JOIN posting AS p ON o.id = p.order_id WHERE o.user_id = $1 AND p.journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
+		userID,
+	)
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return nil, rows.Err()
+	}
+
+	orders := make([]*models.Order, 0)
+	for rows.Next() {
+		order := new(models.Order)
+		var unixProcessed int64
+		if err := rows.Scan(&order.Number, &order.Sum, &unixProcessed); err != nil {
+			p.logger.Error().Caller().Msg("unable to scan query result")
+			return nil, err
+		}
+		order.ProcessedAt = time.Unix(unixProcessed, 0)
+		orders = append(orders, order)
+	}
+
+	if rows.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return nil, rows.Err()
+	}
+
+	p.logger.Debug().Caller().Msgf("found %d withdrawals for user '%d'", len(orders), userID)
+
+	return orders, nil
 }
