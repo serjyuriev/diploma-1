@@ -17,6 +17,8 @@ type Claims struct {
 }
 
 type Order struct {
+	ID          int64
+	UserID      int
 	Number      string
 	Status      string
 	Accrual     Point
