@@ -182,8 +182,73 @@ func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models
 	return b, nil
 }
 
-func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64) error {
-	return errNotImplemented
+// UpdateBalance insert amount of withdrawn points into
+// posting table.
+func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64, order string) error {
+	p.logger.Debug().Caller().Msgf("withdrawing %.2f from user '%d'", amount, userID)
+
+	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to start a transaction")
+		return err
+	}
+	defer tx.Rollback()
+
+	row := p.db.QueryRowContext(
+		ctx,
+		"INSERT INTO balance_journal(type) VALUES ('withdrawal');",
+	)
+
+	var id int
+	if err := row.Scan(&id); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result")
+		return err
+	}
+	if row.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query for updating balance")
+		return err
+	}
+
+	_, err = p.db.ExecContext(
+		ctx,
+		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES ($1, (SELECT id FROM orders WHERE number = $2), $3, $4);",
+		userID,
+		order,
+		id,
+		-models.ToPoints(amount),
+	)
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return err
+	}
+
+	row = p.db.QueryRowContext(
+		ctx,
+		"INSERT INTO balance_journal(type) VALUES ('deposit');",
+	)
+
+	if err := row.Scan(&id); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result")
+		return err
+	}
+	if row.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query for updating balance")
+		return err
+	}
+
+	_, err = p.db.ExecContext(
+		ctx,
+		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES (1, (SELECT id FROM orders WHERE number = $1), $2, $3);",
+		order,
+		id,
+		models.ToPoints(amount),
+	)
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // SelectWithdrawalsByUser gather order's number, sum and time of processing
