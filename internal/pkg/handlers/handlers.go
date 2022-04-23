@@ -191,17 +191,56 @@ func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *handlers) GetUserWithdrawalsHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
-}
+	userID := r.Context().Value(ContextKey("user_id")).(int)
+	withdrawals, err := h.repo.SelectWithdrawalsByUser(r.Context(), userID)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to get user withdrawals")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 
-type getUserOrdersResponse struct {
-	Number     string  `json:"number"`
-	Status     string  `json:"string"`
-	Accrual    float64 `json:"accrual"`
-	UploadedAt string  `json:"uploaded_at"`
+	if len(withdrawals) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	res := make([]getUserWithdrawalsResponse, 0)
+	for _, withdrawal := range withdrawals {
+		sr := getUserWithdrawalsResponse{
+			Number:      withdrawal.Number,
+			Sum:         withdrawal.Sum.Float64(),
+			ProcessedAt: withdrawal.ProcessedAt.Format(time.RFC3339),
+		}
+
+		res = append(res, sr)
+	}
+
+	json, err := json.Marshal(res)
+	if err != nil {
+		h.logger.Err(err).Caller().Msg("unable to marshal response")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(json)
 }
 
 type getUserBalanceResponse struct {
 	Current   float64 `json:"current"`
 	Withdrawn float64 `json:"withdrawn"`
+}
+
+type getUserOrdersResponse struct {
+	Number     string  `json:"number"`
+	Status     string  `json:"status"`
+	Accrual    float64 `json:"accrual"`
+	UploadedAt string  `json:"uploaded_at"`
+}
+
+type getUserWithdrawalsResponse struct {
+	Number      string  `json:"number"`
+	Sum         float64 `json:"sum"`
+	ProcessedAt string  `json:"processed_at"`
 }
