@@ -178,7 +178,8 @@ func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models
 		"SELECT SUM(amount) FROM posting WHERE user_id = $1;",
 		userID,
 	)
-	if err := rows.Scan(&b.Current); err != nil {
+	var sum sql.NullInt64
+	if err := rows.Scan(&sum); err != nil {
 		p.logger.Error().Caller().Msg("unable to scan query result for current balance")
 		return nil, err
 	}
@@ -187,17 +188,29 @@ func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models
 		return nil, rows.Err()
 	}
 
+	if !sum.Valid {
+		b.Current = 0
+	} else {
+		b.Current = models.Point(sum.Int64)
+	}
+
 	rows = p.db.QueryRow(
 		"SELECT ABS(SUM(amount)) FROM posting WHERE user_id = $1 AND journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
 		userID,
 	)
-	if err := rows.Scan(&b.Withdrawn); err != nil {
+	if err := rows.Scan(&sum); err != nil {
 		p.logger.Error().Caller().Msg("unable to scan query result for withdrawn amount")
 		return nil, err
 	}
 	if rows.Err() != nil {
 		p.logger.Error().Caller().Msg("unable to execute query for withdrawn amount")
 		return nil, rows.Err()
+	}
+
+	if !sum.Valid {
+		b.Withdrawn = 0
+	} else {
+		b.Withdrawn = models.Point(sum.Int64)
 	}
 
 	p.logger.Debug().Caller().Msgf("calculated balance for user '%d'", userID)
@@ -219,7 +232,7 @@ func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64
 
 	row := p.db.QueryRowContext(
 		ctx,
-		"INSERT INTO balance_journal(type) VALUES ('withdrawal');",
+		"INSERT INTO balance_journal(type) VALUES ('withdrawal') RETURNING id;",
 	)
 
 	var id int
@@ -247,7 +260,7 @@ func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64
 
 	row = p.db.QueryRowContext(
 		ctx,
-		"INSERT INTO balance_journal(type) VALUES ('deposit');",
+		"INSERT INTO balance_journal(type) VALUES ('deposit') RETURNING id;",
 	)
 
 	if err := row.Scan(&id); err != nil {
@@ -280,7 +293,7 @@ func (p *postgres) SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*
 	p.logger.Debug().Caller().Msgf("selecting withdrawals for user '%d'", userID)
 
 	rows, err := p.db.Query(
-		"SELECT o.number, ABS(p.amount), o.processed_at FROM orders AS o INNER JOIN posting AS p ON o.id = p.order_id WHERE o.user_id = $1 AND p.journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
+		"SELECT o.number, ABS(p.amount), o.processed_at FROM posting AS p INNER JOIN orders AS o ON p.order_id = o.id WHERE p.user_id = $1 AND p.journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
 		userID,
 	)
 	if err != nil {
