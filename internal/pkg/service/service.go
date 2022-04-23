@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"crypto/sha1"
+	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -17,14 +19,17 @@ import (
 var (
 	errNotImplemented = errors.New("method not implemented yet")
 
-	ErrNotEnoughPoints = errors.New("not enough points")
-	ErrNotRegistered   = errors.New("user with provided credentials isn't registered")
+	ErrNotEnoughPoints         = errors.New("not enough points")
+	ErrNotRegistered           = errors.New("user with provided credentials isn't registered")
+	ErrNotValidOrderNumber     = errors.New("order number is not valid")
+	ErrOrderAddedByUser        = errors.New("order already added by current user")
+	ErrOrderAddedByAnotherUser = errors.New("order already added by another user")
 )
 
 type Service interface {
 	RegisterUser(ctx context.Context, user *models.User) (string, error)
 	LoginUser(ctx context.Context, user *models.User) (string, error)
-	CreateNewOrder(ctx context.Context, number, userID int) error
+	CreateNewOrder(ctx context.Context, number string, userID int) error
 	WithdrawPoints(ctx context.Context, userID int, amount float64, order string) error
 }
 
@@ -106,8 +111,34 @@ func (svc *service) LoginUser(ctx context.Context, user *models.User) (string, e
 	return "", ErrNotRegistered
 }
 
-func (svc *service) CreateNewOrder(ctx context.Context, number, userID int) error {
-	return errNotImplemented
+func (svc *service) CreateNewOrder(ctx context.Context, number string, userID int) error {
+	svc.logger.Debug().Caller().Msgf("trying to create new order '%s' for user '%d'", number, userID)
+
+	if !svc.validateOrderNumber(number) {
+		svc.logger.Warn().Caller().Msgf("order number %s is not valid", number)
+		return ErrNotValidOrderNumber
+	}
+
+	o, err := svc.repo.SelectOrderByNumber(ctx, number)
+	if err == nil {
+		if o.UserID == userID {
+			return ErrOrderAddedByUser
+		} else {
+			return ErrOrderAddedByAnotherUser
+		}
+	}
+
+	if !errors.Is(err, sql.ErrNoRows) {
+		svc.logger.Error().Caller().Msg("unable to get order from database")
+		return err
+	}
+
+	if err := svc.repo.InsertOrder(ctx, number, userID); err != nil {
+		svc.logger.Error().Caller().Msg("unable to insert order into database")
+		return err
+	}
+
+	return nil
 }
 
 // WithdrawPoints checks if user has enough points
@@ -115,7 +146,7 @@ func (svc *service) CreateNewOrder(ctx context.Context, number, userID int) erro
 func (svc *service) WithdrawPoints(ctx context.Context, userID int, amount float64, order string) error {
 	svc.logger.Debug().Caller().Msgf("withdrawing %.2f points for order '%s' of user %d", amount, order, userID)
 
-	orderID, err := svc.repo.SelectOrderByNumber(ctx, order)
+	o, err := svc.repo.SelectOrderByNumber(ctx, order)
 	if err != nil {
 		svc.logger.Error().Caller().Msg("unable to find order with provided number")
 		return err
@@ -131,10 +162,37 @@ func (svc *service) WithdrawPoints(ctx context.Context, userID int, amount float
 		return ErrNotEnoughPoints
 	}
 
-	if err := svc.repo.UpdateBalance(ctx, userID, amount, orderID); err != nil {
+	if err := svc.repo.UpdateBalance(ctx, userID, amount, o.ID); err != nil {
 		svc.logger.Error().Caller().Msg("unable to update user's balance in database")
 		return err
 	}
 
 	return nil
+}
+
+// validateOrderNumber checks if provided number is correct
+// using Luhn algorithm.
+func (svc *service) validateOrderNumber(number string) bool {
+	_, err := strconv.Atoi(number)
+	if err != nil {
+		svc.logger.Error().Caller().Msg("unable to convert order number to integer")
+		return false
+	}
+
+	sum := 0
+	for i := len(number) - 1; i >= 0; i -= 2 {
+		d, _ := strconv.Atoi(string(number[i]))
+		sum += d
+	}
+
+	for i := len(number) - 2; i >= 0; i -= 2 {
+		d, _ := strconv.Atoi(string(number[i]))
+		d *= 2
+		if d > 9 {
+			d -= 9
+		}
+		sum += d
+	}
+
+	return sum%10 == 0
 }
