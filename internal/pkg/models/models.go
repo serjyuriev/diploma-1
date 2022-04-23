@@ -17,14 +17,15 @@ type Claims struct {
 }
 
 type Order struct {
-	ID          int64
-	UserID      int
-	Number      string
-	Status      string
-	Accrual     Point
-	Sum         Point
-	UploadedAt  time.Time
-	ProcessedAt time.Time
+	ID            int64
+	UserID        int
+	Number        string
+	Status        string
+	AccrualStatus string
+	Accrual       Point
+	Sum           Point
+	UploadedAt    time.Time
+	ProcessedAt   time.Time
 }
 
 type Point int64
