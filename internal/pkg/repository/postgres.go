@@ -137,7 +137,9 @@ func (p *postgres) SelectOrderByNumber(ctx context.Context, number string) (*mod
 
 	order := new(models.Order)
 	if err := row.Scan(&order.ID, &order.UserID); err != nil {
-		p.logger.Error().Caller().Msg("unable to scan query result")
+		if !errors.Is(err, sql.ErrNoRows) {
+			p.logger.Error().Caller().Msg("unable to scan query result")
+		}
 		return nil, err
 	}
 	if row.Err() != nil {
