@@ -25,14 +25,15 @@ var (
 func GetConfig() Config {
 	once.Do(func() {
 		cfg = &Config{}
-		flag.StringVar(&cfg.RunAddress, "a", "", "address and port for starting service on")
-		flag.StringVar(&cfg.DatabaseURI, "d", "", "data source name")
-		flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
-		flag.Parse()
 
 		if err := env.Parse(cfg); err != nil {
 			log.Fatalf("unable to load values from environment variables: %v", err)
 		}
+
+		flag.StringVar(&cfg.RunAddress, "a", "", "address and port for starting service on")
+		flag.StringVar(&cfg.DatabaseURI, "d", "", "data source name")
+		flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
+		flag.Parse()
 
 		log.Printf("%v\n", cfg)
 	})
