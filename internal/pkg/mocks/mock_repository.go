@@ -35,12 +35,27 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
-// InsertOrder mocks base method.
-func (m *MockRepository) InsertOrder(ctx context.Context, number string, userID int) error {
+// InsertAccrual mocks base method.
+func (m *MockRepository) InsertAccrual(ctx context.Context, userID int, amount float64, orderID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertOrder", ctx, number, userID)
+	ret := m.ctrl.Call(m, "InsertAccrual", ctx, userID, amount, orderID)
 	ret0, _ := ret[0].(error)
 	return ret0
+}
+
+// InsertAccrual indicates an expected call of InsertAccrual.
+func (mr *MockRepositoryMockRecorder) InsertAccrual(ctx, userID, amount, orderID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertAccrual", reflect.TypeOf((*MockRepository)(nil).InsertAccrual), ctx, userID, amount, orderID)
+}
+
+// InsertOrder mocks base method.
+func (m *MockRepository) InsertOrder(ctx context.Context, number string, userID int) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertOrder", ctx, number, userID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // InsertOrder indicates an expected call of InsertOrder.
@@ -61,6 +76,20 @@ func (m *MockRepository) InsertUser(ctx context.Context, user *models.User) erro
 func (mr *MockRepositoryMockRecorder) InsertUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUser", reflect.TypeOf((*MockRepository)(nil).InsertUser), ctx, user)
+}
+
+// InsertWithdrawal mocks base method.
+func (m *MockRepository) InsertWithdrawal(ctx context.Context, userID int, amount float64, orderID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertWithdrawal", ctx, userID, amount, orderID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertWithdrawal indicates an expected call of InsertWithdrawal.
+func (mr *MockRepositoryMockRecorder) InsertWithdrawal(ctx, userID, amount, orderID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertWithdrawal", reflect.TypeOf((*MockRepository)(nil).InsertWithdrawal), ctx, userID, amount, orderID)
 }
 
 // SelectBalanceByUser mocks base method.
@@ -136,20 +165,6 @@ func (m *MockRepository) SelectWithdrawalsByUser(ctx context.Context, userID int
 func (mr *MockRepositoryMockRecorder) SelectWithdrawalsByUser(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectWithdrawalsByUser", reflect.TypeOf((*MockRepository)(nil).SelectWithdrawalsByUser), ctx, userID)
-}
-
-// UpdateBalance mocks base method.
-func (m *MockRepository) UpdateBalance(ctx context.Context, userID int, amount float64, orderID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateBalance", ctx, userID, amount, orderID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateBalance indicates an expected call of UpdateBalance.
-func (mr *MockRepositoryMockRecorder) UpdateBalance(ctx, userID, amount, orderID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBalance", reflect.TypeOf((*MockRepository)(nil).UpdateBalance), ctx, userID, amount, orderID)
 }
 
 // UpdateOrderStatus mocks base method.
