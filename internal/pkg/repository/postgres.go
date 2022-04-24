@@ -104,24 +104,31 @@ func (p *postgres) SelectUser(ctx context.Context, login string) (*models.User, 
 }
 
 // InsertOrder inserts new order info into orders table.
-func (p *postgres) InsertOrder(ctx context.Context, number string, userID int) error {
+func (p *postgres) InsertOrder(ctx context.Context, number string, userID int) (int64, error) {
 	p.logger.Debug().Caller().Msgf("inserting order '%s' in database", number)
 
-	if _, err := p.db.ExecContext(
+	row := p.db.QueryRowContext(
 		ctx,
-		"INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)",
+		"INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4) RETURNING id",
 		number,
 		userID,
 		"NEW",
 		time.Now().Unix(),
-	); err != nil {
+	)
+	if row.Err() != nil {
 		p.logger.Error().Caller().Msg("unable to execute query")
-		return err
+		return 0, row.Err()
+	}
+
+	var id int64
+	if err := row.Scan(&id); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result")
+		return 0, row.Err()
 	}
 
 	p.logger.Debug().Caller().Msgf("order '%s' was inserted", number)
 
-	return nil
+	return id, nil
 }
 
 // SelectOrderByNumber selects id of order with provided number
@@ -266,9 +273,9 @@ func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models
 	return b, nil
 }
 
-// UpdateBalance insert amount of withdrawn points into
+// InsertWithdrawal insert amount of withdrawn points into
 // posting table.
-func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64, orderID int64) error {
+func (p *postgres) InsertWithdrawal(ctx context.Context, userID int, amount float64, orderID int64) error {
 	p.logger.Debug().Caller().Msgf("withdrawing %.2f from user '%d'", amount, userID)
 
 	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
@@ -326,6 +333,75 @@ func (p *postgres) UpdateBalance(ctx context.Context, userID int, amount float64
 		orderID,
 		id,
 		models.ToPoints(amount),
+	)
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// InsertAccrual insert amount of added points into
+// posting table.
+func (p *postgres) InsertAccrual(ctx context.Context, userID int, amount float64, orderID int64) error {
+	p.logger.Debug().Caller().Msgf("depositing %.2f to user '%d'", amount, userID)
+
+	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to start a transaction")
+		return err
+	}
+	defer tx.Rollback()
+
+	row := p.db.QueryRowContext(
+		ctx,
+		"INSERT INTO balance_journal(type) VALUES ('deposit') RETURNING id;",
+	)
+
+	var id int
+	if err := row.Scan(&id); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result")
+		return err
+	}
+	if row.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query for updating balance")
+		return err
+	}
+
+	_, err = p.db.ExecContext(
+		ctx,
+		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES ($1, $2, $3, $4);",
+		userID,
+		orderID,
+		id,
+		models.ToPoints(amount),
+	)
+	if err != nil {
+		p.logger.Error().Caller().Msg("unable to execute query")
+		return err
+	}
+
+	row = p.db.QueryRowContext(
+		ctx,
+		"INSERT INTO balance_journal(type) VALUES ('withdrawal') RETURNING id;",
+	)
+
+	if err := row.Scan(&id); err != nil {
+		p.logger.Error().Caller().Msg("unable to scan query result")
+		return err
+	}
+	if row.Err() != nil {
+		p.logger.Error().Caller().Msg("unable to execute query for updating balance")
+		return err
+	}
+
+	_, err = p.db.ExecContext(
+		ctx,
+		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES (1, $1, $2, $3);",
+		orderID,
+		id,
+		-models.ToPoints(amount),
 	)
 	if err != nil {
 		p.logger.Error().Caller().Msg("unable to execute query")
