@@ -56,7 +56,7 @@ func NewService(logger zerolog.Logger, repo repository.Repository) (Service, err
 	logger.Debug().Caller().Msg("initializing service")
 	svc := &service{
 		config:         config.GetConfig(),
-		accrual:        accrual.NewAccrualClient(),
+		accrual:        accrual.NewAccrualClient(logger),
 		logger:         logger,
 		repo:           repo,
 		jobChan:        make(chan *job),
