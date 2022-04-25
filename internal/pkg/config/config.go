@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	RunAddress                string `env:"RUN_ADDRESS"`
+	RunAddress                string `env:"RUN_ADDRESS" envDefault:"localhost:8080"`
 	DatabaseURI               string `env:"DATABASE_URI"`
 	AccrualSystemAddress      string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 	AccrualSystemSurveyPeriod int    `env:"ACCRUAL_SYSTEM_SURVEY_PERIOD" envDefault:"5"`
@@ -30,7 +30,7 @@ func GetConfig() Config {
 			log.Fatalf("unable to load values from environment variables: %v", err)
 		}
 
-		flag.StringVar(&cfg.RunAddress, "a", "", "address and port for starting service on")
+		flag.StringVar(&cfg.RunAddress, "a", "localhost:8080", "address and port for starting service on")
 		flag.StringVar(&cfg.DatabaseURI, "d", "", "data source name")
 		flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
 		flag.Parse()
