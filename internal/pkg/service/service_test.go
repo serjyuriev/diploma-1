@@ -3,6 +3,7 @@ package service
 import (
 	"database/sql"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -15,6 +16,7 @@ import (
 
 func Test_CreateNewOrder(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	wg := sync.WaitGroup{}
 
 	ma := mocks.NewMockAccrual(ctrl)
 
@@ -47,7 +49,7 @@ func Test_CreateNewOrder(t *testing.T) {
 
 	mr := mocks.NewMockRepository(ctrl)
 	mr.EXPECT().SelectOrderByNumber(nil, gomock.Eq("6122")).Return(nil, sql.ErrNoRows)
-	mr.EXPECT().UpdateOrderStatus(nil, gomock.Eq("6122"), gomock.Any()).MinTimes(2)
+	mr.EXPECT().UpdateOrderStatus(nil, gomock.Eq("6122"), gomock.Any()).Times(3).Do(func(interface{}, interface{}, interface{}) { wg.Done() })
 	mr.EXPECT().InsertOrder(nil, gomock.Eq("6122"), gomock.Eq(2)).Return(int64(2), nil)
 	mr.EXPECT().InsertAccrual(nil, gomock.Eq(2), gomock.Eq(300.12), gomock.Eq(int64(2))).Return(nil)
 
@@ -68,6 +70,8 @@ func Test_CreateNewOrder(t *testing.T) {
 		jobChan: make(chan *job),
 	}
 	svc.polling(5)
+	wg.Add(3)
 	err := svc.CreateNewOrder(nil, "6122", 2)
+	wg.Wait()
 	require.NoError(t, err)
 }
