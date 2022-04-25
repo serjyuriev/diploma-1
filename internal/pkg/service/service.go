@@ -274,9 +274,6 @@ func (svc *service) pollAccrualSystem(ctx context.Context, order *models.Order, 
 			close(out)
 		}
 	}
-
-	order.AccrualStatus = o.AccrualStatus
-	order.Accrual = o.Accrual
 }
 
 func (svc *service) polling(workers int) {
