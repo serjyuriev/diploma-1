@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"log"
 	"sync"
 
@@ -29,10 +28,10 @@ func GetConfig() Config {
 		if err := env.Parse(cfg); err != nil {
 			log.Printf("unable to load values from environment variables: %v", err)
 
-			flag.StringVar(&cfg.RunAddress, "a", "", "address and port for starting service on")
-			flag.StringVar(&cfg.DatabaseURI, "d", "", "data source name")
-			flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
-			flag.Parse()
+			// flag.StringVar(&cfg.RunAddress, "a", "", "address and port for starting service on")
+			// flag.StringVar(&cfg.DatabaseURI, "d", "", "data source name")
+			// flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
+			// flag.Parse()
 		}
 
 		log.Printf("%v\n", cfg)
