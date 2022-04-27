@@ -277,12 +277,11 @@ func (svc *service) pollAccrualSystem(ctx context.Context, order *models.Order, 
 }
 
 func (svc *service) polling(workers int) {
-	// for i := 0; i < workers; i++ {
-	// 	go func() {
-	// 		for job := range svc.jobChan {
-	// 			svc.pollAccrualSystem(job.ctx, job.order, job.resChan)
-	// 			job.resChan <- job.order
-	// 		}
-	// 	}()
-	// }
+	for i := 0; i < workers; i++ {
+		go func() {
+			for job := range svc.jobChan {
+				svc.pollAccrualSystem(job.ctx, job.order, job.resChan)
+			}
+		}()
+	}
 }

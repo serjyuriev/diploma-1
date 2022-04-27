@@ -36,7 +36,7 @@ type handlers struct {
 func MakeHandlers(logger zerolog.Logger) (Handlers, error) {
 	logger.Debug().Caller().Msg("preparing handlers")
 
-	repo, err := repository.NewDummy(logger)
+	repo, err := repository.NewPostgres(logger)
 	if err != nil {
 		logger.Error().Caller().Msg("unable to initialize postgres repository")
 		return nil, err
