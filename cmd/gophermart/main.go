@@ -2,16 +2,21 @@ package main
 
 import (
 	"log"
-	"time"
+	"net/http"
 
 	"github.com/serjyuriev/diploma-1/internal/app"
+	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 )
 
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println(r)
-			time.Sleep(10 * time.Minute)
+			http.ListenAndServe(config.GetConfig().RunAddress, http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte("ok"))
+				},
+			))
 		}
 	}()
 	app, err := app.NewApp()
