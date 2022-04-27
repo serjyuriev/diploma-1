@@ -27,7 +27,7 @@ func GetConfig() Config {
 		cfg = &Config{}
 
 		if err := env.Parse(cfg); err != nil {
-			log.Fatalf("unable to load values from environment variables: %v", err)
+			log.Printf("unable to load values from environment variables: %v", err)
 		}
 
 		flag.StringVar(&cfg.RunAddress, "a", "", "address and port for starting service on")

@@ -29,7 +29,7 @@ func NewApp() (App, error) {
 	logger := zerolog.New(output).With().Timestamp().Logger()
 	handlers, err := handlers.MakeHandlers(logger)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("unable to make handlers")
+		logger.Error().Err(err).Msg("unable to make handlers")
 	}
 
 	return &app{
@@ -44,7 +44,7 @@ func (app *app) Start() error {
 	r.Use(middleware.Auth)
 	r.Post("/api/user/register", app.handlers.RegisterUserHandler)
 	r.Post("/api/user/login", app.handlers.LoginUserHandler)
-	r.Post("/api/user/orders", app.handlers.PostUserOrderHandler)
+	// r.Post("/api/user/orders", app.handlers.PostUserOrderHandler)
 	r.Get("/api/user/orders", app.handlers.GetUserOrdersHandler)
 	r.Get("/api/user/balance", app.handlers.GetUserBalanceHandler)
 	r.Post("/api/user/balance/withdraw", app.handlers.WithdrawUserPointsHandler)
