@@ -272,6 +272,7 @@ func (svc *service) pollAccrualSystem(ctx context.Context, order *models.Order, 
 
 		if o.AccrualStatus == "INVALID" || o.AccrualStatus == "PROCESSED" {
 			close(out)
+			return
 		}
 	}
 }
