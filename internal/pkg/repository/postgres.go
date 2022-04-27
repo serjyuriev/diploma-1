@@ -11,8 +11,6 @@ import (
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
 
-	"github.com/golang-migrate/migrate/v4"
-	psql "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
@@ -37,22 +35,22 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 		return nil, err
 	}
 
-	driver, err := psql.WithInstance(db, &psql.Config{})
-	if err != nil {
-		logger.Error().Caller().Msg("unable to create psql driver")
-		return nil, err
-	}
+	// driver, err := psql.WithInstance(db, &psql.Config{})
+	// if err != nil {
+	// 	logger.Error().Caller().Msg("unable to create psql driver")
+	// 	return nil, err
+	// }
 
-	m, err := migrate.NewWithDatabaseInstance(
-		// TODO: add this to config
-		"file://../../scripts/migrations",
-		"praktikum", driver)
-	if err != nil {
-		logger.Error().Caller().Msg("unable to create migrations client")
-		return nil, err
-	}
+	// m, err := migrate.NewWithDatabaseInstance(
+	// 	// TODO: add this to config
+	// 	"file://../../scripts/migrations",
+	// 	"praktikum", driver)
+	// if err != nil {
+	// 	logger.Error().Caller().Msg("unable to create migrations client")
+	// 	return nil, err
+	// }
 
-	m.Up()
+	// m.Up()
 
 	return &postgres{
 		cfg:    cfg,
