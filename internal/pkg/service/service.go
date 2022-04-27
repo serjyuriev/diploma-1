@@ -268,6 +268,7 @@ func (svc *service) pollAccrualSystem(ctx context.Context, order *models.Order, 
 			return
 		}
 
+		svc.logger.Info().Caller().Msgf("%v", o)
 		out <- o
 
 		if o.AccrualStatus == "INVALID" || o.AccrualStatus == "PROCESSED" {
