@@ -7,11 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	psql "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
-	"github.com/serjyuriev/diploma-1/vendor/github.com/golang-migrate/migrate/v4"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
