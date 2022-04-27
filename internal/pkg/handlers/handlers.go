@@ -163,6 +163,8 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	h.logger.Info().Caller().Msgf("%v", orders)
+
 	res := make([]getUserOrdersResponse, 0)
 	for _, order := range orders {
 		sr := getUserOrdersResponse{
@@ -175,6 +177,8 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 		res = append(res, sr)
 	}
 
+	h.logger.Info().Caller().Msgf("%v", res)
+
 	json, err := json.Marshal(res)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to marshal response")
@@ -182,6 +186,7 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	h.logger.Info().Caller().Msg(string(json))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
 }
