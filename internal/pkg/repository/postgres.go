@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
+	"github.com/serjyuriev/diploma-1/vendor/github.com/golang-migrate/migrate/v4"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -35,24 +37,24 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 		return nil, err
 	}
 
-	// driver, err := psql.WithInstance(db, &psql.Config{})
-	// if err != nil {
-	// 	logger.Error().Caller().Msg("unable to create psql driver")
-	// 	return nil, err
-	// }
+	driver, err := psql.WithInstance(db, &psql.Config{})
+	if err != nil {
+		logger.Error().Caller().Msg("unable to create psql driver")
+		return nil, err
+	}
 
-	// m, err := migrate.NewWithDatabaseInstance(
-	// 	// TODO: add this to config
-	// 	"file:///app/scripts/migrations",
-	// 	strings.Split(cfg.DatabaseURI, "/")[3],
-	// 	driver,
-	// )
-	// if err != nil {
-	// 	logger.Error().Caller().Msg("unable to create migrations client")
-	// 	return nil, err
-	// }
+	m, err := migrate.NewWithDatabaseInstance(
+		// TODO: add this to config
+		"file://scripts/migrations/",
+		strings.Split(cfg.DatabaseURI, "/")[3],
+		driver,
+	)
+	if err != nil {
+		logger.Error().Caller().Msg("unable to create migrations client")
+		return nil, err
+	}
 
-	// m.Up()
+	m.Up()
 
 	return &postgres{
 		cfg:    cfg,
