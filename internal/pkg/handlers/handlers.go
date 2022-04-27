@@ -56,6 +56,7 @@ func MakeHandlers(logger zerolog.Logger) (Handlers, error) {
 }
 
 func (h *handlers) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info().Caller().Msg("POST /api/user/register")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to read request body")
@@ -88,6 +89,7 @@ func (h *handlers) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info().Caller().Msg("POST /api/user/login")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to read request body")
@@ -119,6 +121,7 @@ func (h *handlers) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info().Caller().Msg("POST /api/user/orders")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -144,6 +147,7 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info().Caller().Msg("GET /api/user/orders")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
 	orders, err := h.repo.SelectOrdersByUser(r.Context(), userID)
 	if err != nil {
@@ -182,6 +186,7 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info().Caller().Msg("GET /api/user/balance")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
 	b, err := h.repo.SelectBalanceByUser(r.Context(), userID)
 	if err != nil {
@@ -208,6 +213,7 @@ func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info().Caller().Msg("POST /api/user/balance/withdraw")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
 
 	body, err := io.ReadAll(r.Body)
@@ -238,6 +244,7 @@ func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *handlers) GetUserWithdrawalsHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info().Caller().Msg("GET /api/user/balance/withdrawals")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
 	withdrawals, err := h.repo.SelectWithdrawalsByUser(r.Context(), userID)
 	if err != nil {
