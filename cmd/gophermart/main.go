@@ -18,6 +18,7 @@ func main() {
 	app, err := app.NewApp()
 	if err != nil {
 		log.Printf("unable to initialized new app: %v", err)
+		return
 	}
 
 	log.Println("starting application...")

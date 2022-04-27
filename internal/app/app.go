@@ -30,6 +30,7 @@ func NewApp() (App, error) {
 	handlers, err := handlers.MakeHandlers(logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("unable to make handlers")
+		return nil, err
 	}
 
 	return &app{
