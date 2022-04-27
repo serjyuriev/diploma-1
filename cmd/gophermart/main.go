@@ -8,6 +8,8 @@ import (
 )
 
 func main() {
+	log.Println("hey")
+	time.Sleep(10 * time.Minute)
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println(r)
