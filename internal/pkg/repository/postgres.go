@@ -46,7 +46,7 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	m, err := migrate.NewWithDatabaseInstance(
 		// TODO: add this to config
 		"file://../../scripts/migrations",
-		"gophermart", driver)
+		"praktikum", driver)
 	if err != nil {
 		logger.Error().Caller().Msg("unable to create migrations client")
 		return nil, err
