@@ -11,7 +11,7 @@ type Config struct {
 	RunAddress                string `env:"RUN_ADDRESS"`
 	DatabaseURI               string `env:"DATABASE_URI"`
 	AccrualSystemAddress      string `env:"ACCRUAL_SYSTEM_ADDRESS"`
-	AccrualSystemSurveyPeriod int    `env:"ACCRUAL_SYSTEM_SURVEY_PERIOD" envDefault:"5"`
+	AccrualSystemSurveyPeriod int    `env:"ACCRUAL_SYSTEM_SURVEY_PERIOD" envDefault:"2"`
 }
 
 var (
