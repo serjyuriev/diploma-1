@@ -51,6 +51,6 @@ func (app *app) Start() error {
 	r.Post("/api/user/balance/withdraw", app.handlers.WithdrawUserPointsHandler)
 	r.Get("/api/user/balance/withdrawals", app.handlers.GetUserWithdrawalsHandler)
 
-	app.logger.Info().Msgf("starting application on %s", app.cfg.RunAddress)
+	app.logger.Info().Caller().Msgf("starting application on %s", app.cfg.RunAddress)
 	return http.ListenAndServe(app.cfg.RunAddress, r)
 }

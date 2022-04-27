@@ -352,7 +352,7 @@ func (p *postgres) InsertAccrual(ctx context.Context, userID int, amount float64
 
 	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
 	if err != nil {
-		p.logger.Error().Caller().Msg("unable to start a transaction")
+		p.logger.Err(err).Caller().Msg("unable to start a transaction")
 		return err
 	}
 	defer tx.Rollback()

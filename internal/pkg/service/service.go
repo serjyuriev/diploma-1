@@ -155,7 +155,7 @@ func (svc *service) CreateNewOrder(ctx context.Context, number string, userID in
 
 	go func() {
 		for order := range resc {
-			svc.logger.Debug().Msgf("accrual status = %s", order.AccrualStatus)
+			svc.logger.Debug().Caller().Msgf("accrual status = %s", order.AccrualStatus)
 			if order.AccrualStatus == "REGISTERED" || order.AccrualStatus == "PROCESSING" {
 				if err := svc.repo.UpdateOrderStatus(ctx, number, &models.Order{
 					Number: number,
