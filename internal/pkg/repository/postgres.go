@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -45,8 +46,10 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 
 	m, err := migrate.NewWithDatabaseInstance(
 		// TODO: add this to config
-		"file://../../scripts/migrations",
-		"praktikum", driver)
+		"file:///app/scripts/migrations",
+		strings.Split(cfg.DatabaseURI, "/")[3],
+		driver,
+	)
 	if err != nil {
 		logger.Error().Caller().Msg("unable to create migrations client")
 		return nil, err
