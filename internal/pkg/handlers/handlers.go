@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -129,7 +130,7 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	if err := h.svc.CreateNewOrder(r.Context(), string(body), userID); err != nil {
+	if err := h.svc.CreateNewOrder(context.Background(), string(body), userID); err != nil {
 		if errors.Is(err, service.ErrNotValidOrderNumber) {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 		} else if errors.Is(err, service.ErrOrderAddedByUser) {
