@@ -80,7 +80,7 @@ func (a *accrual) GetOrderStatus(ctx context.Context, order string) (*models.Ord
 	return &models.Order{
 		Number:        accrualResponse.Order,
 		AccrualStatus: accrualResponse.Status,
-		Accrual:       models.Point(accrualResponse.Accrual),
+		Accrual:       models.ToPoints(accrualResponse.Accrual),
 	}, nil
 }
 
