@@ -255,12 +255,11 @@ func (svc *service) getOrderAccrualInfo(ctx context.Context, number string) chan
 }
 
 func (svc *service) pollAccrualSystem(ctx context.Context, order *models.Order, out chan *models.Order) {
+	// TODO: переделать длительность в конфиге с int на time.Duration
 	ticker := time.NewTicker(time.Duration(svc.config.AccrualSystemSurveyPeriod * 1000000000))
-	o := new(models.Order)
-	var err error
 
 	for range ticker.C {
-		o, err = svc.accrual.GetOrderStatus(ctx, order.Number)
+		o, err := svc.accrual.GetOrderStatus(ctx, order.Number)
 		if err != nil {
 			svc.logger.Err(err).Msg("unable to get order status from accrual system")
 			close(out)
