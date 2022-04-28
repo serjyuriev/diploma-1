@@ -163,15 +163,15 @@ func (p *postgres) SelectOrderByNumber(ctx context.Context, number string) (*mod
 // SelectOrdersByUser gathers number, status, accrual
 // and time of uploaded of user with provided ID.
 func (p *postgres) SelectOrdersByUser(ctx context.Context, userID int) ([]*models.Order, error) {
-	p.logger.Debug().Caller().Msgf("selecting orders for user '%d'", userID)
+	p.logger.Debug().Caller().Int("user", userID).Msg("selecting orders")
 
 	rows, err := p.db.Query(
-		"SELECT o.number, o.status, p.amount, o.uploaded_at FROM orders AS o JOIN posting AS p ON p.order_id = o.id AND p.user_id = o.user_id WHERE o.user_id = $1 ORDER BY uploaded_at ASC;",
+		// "SELECT o.number, o.status, p.amount, o.uploaded_at FROM orders AS o JOIN posting AS p ON p.order_id = o.id AND p.user_id = o.user_id WHERE o.user_id = $1 ORDER BY uploaded_at ASC;",
+		"SELECT id, number, status, uploaded_at FROM orders WHERE user_id = $1 ORDER BY uploaded_at ASC;",
 		userID,
 	)
-
 	if err != nil {
-		p.logger.Error().Caller().Msg("unable to execute query")
+		p.logger.Error().Caller().Int("user", userID).Msg("unable to execute query")
 		return nil, rows.Err()
 	}
 
@@ -179,20 +179,39 @@ func (p *postgres) SelectOrdersByUser(ctx context.Context, userID int) ([]*model
 	for rows.Next() {
 		order := new(models.Order)
 		var unixUploaded int64
-		if err := rows.Scan(&order.Number, &order.Status, &order.Accrual, &unixUploaded); err != nil {
-			p.logger.Error().Caller().Msg("unable to scan query result")
+		var orderID int64
+		if err := rows.Scan(&orderID, &order.Number, &order.Status, &unixUploaded); err != nil {
+			p.logger.Error().Caller().Int("user", userID).Msg("unable to scan query result")
 			return nil, err
 		}
 		order.UploadedAt = time.Unix(unixUploaded, 0)
+
+		if order.Status == "PROCESSED" {
+			row := p.db.QueryRowContext(
+				ctx,
+				"SELECT amount FROM posting WHERE order_id = $1;",
+				orderID,
+			)
+			if err := row.Scan(&order.Accrual); err != nil {
+				p.logger.Error().Caller().Int("user", userID).Msg("unable to scan query result")
+				return nil, err
+			}
+			if row.Err() != nil {
+				p.logger.Error().Caller().Int("user", userID).Msg("unable to execute query")
+				return nil, row.Err()
+			}
+		}
+
+		p.logger.Info().Caller().Int("user", userID).Msgf("%v", *order)
 		orders = append(orders, order)
 	}
 
 	if rows.Err() != nil {
-		p.logger.Error().Caller().Msg("unable to execute query")
+		p.logger.Error().Caller().Int("user", userID).Msg("unable to execute query")
 		return nil, rows.Err()
 	}
 
-	p.logger.Debug().Caller().Msgf("found %d orders for user '%d'", len(orders), userID)
+	p.logger.Debug().Caller().Int("user", userID).Msgf("found %d orders", len(orders))
 
 	return orders, nil
 }

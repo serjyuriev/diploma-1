@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
 	"github.com/serjyuriev/diploma-1/internal/pkg/repository"
@@ -124,8 +123,8 @@ func (h *handlers) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info().Caller().Msg("POST /api/user/orders")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
+	h.logger.Info().Caller().Int("user", userID).Msg("POST /api/user/orders")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to read request body")
@@ -134,25 +133,40 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	if err := h.svc.CreateNewOrder(context.Background(), string(body), userID); err != nil {
 		if errors.Is(err, service.ErrNotValidOrderNumber) {
+			h.logger.Warn().Caller().Str("order", string(body)).Msgf(
+				"POST /api/user/orders returned %d",
+				http.StatusUnprocessableEntity,
+			)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 		} else if errors.Is(err, service.ErrOrderAddedByUser) {
+			h.logger.Warn().Caller().Str("order", string(body)).Msgf(
+				"POST /api/user/orders returned %d",
+				http.StatusOK,
+			)
 			w.WriteHeader(http.StatusOK)
 		} else if errors.Is(err, service.ErrOrderAddedByAnotherUser) {
+			h.logger.Warn().Caller().Str("order", string(body)).Msgf(
+				"POST /api/user/orders returned %d",
+				http.StatusConflict,
+			)
 			w.WriteHeader(http.StatusConflict)
 		} else {
-			h.logger.Error().Caller().Msg("unable to create new order")
+			h.logger.Error().Caller().Str("order", string(body)).Msg("unable to create new order")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
+	h.logger.Warn().Caller().Str("order", string(body)).Msgf(
+		"POST /api/user/orders returned %d",
+		http.StatusAccepted,
+	)
 	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	trace := uuid.New()
-	h.logger.Info().Caller().Str("trace", trace.String()).Msg("GET /api/user/orders")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
+	h.logger.Info().Caller().Int("user", userID).Msg("GET /api/user/orders")
 	orders, err := h.repo.SelectOrdersByUser(r.Context(), userID)
 	if err != nil {
 		h.logger.Err(err).Caller().Msg("unable to get user orders")
@@ -164,8 +178,6 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-
-	h.logger.Info().Caller().Str("trace", trace.String()).Msgf("%v", *orders[0])
 
 	res := make([]getUserOrdersResponse, 0)
 	for _, order := range orders {
@@ -179,16 +191,14 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 		res = append(res, sr)
 	}
 
-	h.logger.Info().Caller().Str("trace", trace.String()).Msgf("%v", res)
-
 	json, err := json.Marshal(res)
 	if err != nil {
-		h.logger.Err(err).Caller().Str("trace", trace.String()).Msg("unable to marshal response")
+		h.logger.Err(err).Caller().Msg("unable to marshal response")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info().Caller().Str("trace", trace.String()).Msg(string(json))
+	h.logger.Info().Caller().Int("user", userID).Msg(string(json))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
 }
