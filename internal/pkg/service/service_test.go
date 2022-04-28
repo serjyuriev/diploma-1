@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"os"
 	"sync"
@@ -22,19 +23,19 @@ func Test_CreateNewOrder(t *testing.T) {
 
 	// Asserts that the first and only call to Bar() is passed 99.
 	// Anything else will fail.
-	first := ma.EXPECT().GetOrderStatus(nil, gomock.Eq("6122")).Return(
+	first := ma.EXPECT().GetOrderStatus(context.TODO(), gomock.Eq("6122")).Return(
 		&models.Order{
 			Number:        "6122",
 			AccrualStatus: "REGISTERED",
 		}, nil,
 	)
-	second := ma.EXPECT().GetOrderStatus(nil, gomock.Eq("6122")).Return(
+	second := ma.EXPECT().GetOrderStatus(context.TODO(), gomock.Eq("6122")).Return(
 		&models.Order{
 			Number:        "6122",
 			AccrualStatus: "PROCESSING",
 		}, nil,
 	)
-	third := ma.EXPECT().GetOrderStatus(nil, gomock.Eq("6122")).Return(
+	third := ma.EXPECT().GetOrderStatus(context.TODO(), gomock.Eq("6122")).Return(
 		&models.Order{
 			Number:        "6122",
 			AccrualStatus: "PROCESSED",
@@ -48,10 +49,10 @@ func Test_CreateNewOrder(t *testing.T) {
 	)
 
 	mr := mocks.NewMockRepository(ctrl)
-	mr.EXPECT().SelectOrderByNumber(nil, gomock.Eq("6122")).Return(nil, sql.ErrNoRows)
-	mr.EXPECT().UpdateOrderStatus(nil, gomock.Eq("6122"), gomock.Any()).Times(3).Do(func(interface{}, interface{}, interface{}) { wg.Done() })
-	mr.EXPECT().InsertOrder(nil, gomock.Eq("6122"), gomock.Eq(2)).Return(int64(2), nil)
-	mr.EXPECT().InsertAccrual(nil, gomock.Eq(2), gomock.Eq(300.12), gomock.Eq(int64(2))).Return(nil)
+	mr.EXPECT().SelectOrderByNumber(context.TODO(), gomock.Eq("6122")).Return(nil, sql.ErrNoRows)
+	mr.EXPECT().UpdateOrderStatus(context.TODO(), gomock.Eq("6122"), gomock.Any()).Times(3).Do(func(interface{}, interface{}, interface{}) { wg.Done() })
+	mr.EXPECT().InsertOrder(context.TODO(), gomock.Eq("6122"), gomock.Eq(2)).Return(int64(2), nil)
+	mr.EXPECT().InsertAccrual(context.TODO(), gomock.Eq(2), gomock.Eq(300.12), gomock.Eq(int64(2))).Return(nil)
 
 	output := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
@@ -71,7 +72,7 @@ func Test_CreateNewOrder(t *testing.T) {
 	}
 	svc.polling(5)
 	wg.Add(3)
-	err := svc.CreateNewOrder(nil, "6122", 2)
+	err := svc.CreateNewOrder(context.TODO(), "6122", 2)
 	wg.Wait()
 	require.NoError(t, err)
 }
