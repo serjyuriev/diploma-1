@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
 	"github.com/serjyuriev/diploma-1/internal/pkg/repository"
@@ -149,7 +150,8 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info().Caller().Msg("GET /api/user/orders")
+	trace := uuid.New()
+	h.logger.Info().Caller().Str("trace", trace.String()).Msg("GET /api/user/orders")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
 	orders, err := h.repo.SelectOrdersByUser(r.Context(), userID)
 	if err != nil {
@@ -163,7 +165,7 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.logger.Info().Caller().Msgf("%v", orders)
+	h.logger.Info().Caller().Str("trace", trace.String()).Msgf("%v", *orders[0])
 
 	res := make([]getUserOrdersResponse, 0)
 	for _, order := range orders {
@@ -177,16 +179,16 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 		res = append(res, sr)
 	}
 
-	h.logger.Info().Caller().Msgf("%v", res)
+	h.logger.Info().Caller().Str("trace", trace.String()).Msgf("%v", res)
 
 	json, err := json.Marshal(res)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to marshal response")
+		h.logger.Err(err).Caller().Str("trace", trace.String()).Msg("unable to marshal response")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info().Caller().Msg(string(json))
+	h.logger.Info().Caller().Str("trace", trace.String()).Msg(string(json))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
 }
@@ -298,7 +300,7 @@ type getUserBalanceResponse struct {
 type getUserOrdersResponse struct {
 	Number     string  `json:"number"`
 	Status     string  `json:"status"`
-	Accrual    float64 `json:"accrual"`
+	Accrual    float64 `json:"accrual,omitempty"`
 	UploadedAt string  `json:"uploaded_at"`
 }
 
