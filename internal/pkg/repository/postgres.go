@@ -297,7 +297,7 @@ func (p *postgres) SelectBalanceByUser(ctx context.Context, userID int) (*models
 
 // InsertWithdrawal insert amount of withdrawn points into
 // posting table.
-func (p *postgres) InsertWithdrawal(ctx context.Context, userID int, amount float64, orderID int64) error {
+func (p *postgres) InsertWithdrawal(ctx context.Context, userID int, amount float64) error {
 	p.logger.Debug().Caller().Msgf("withdrawing %.2f from user '%d'", amount, userID)
 
 	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
@@ -324,9 +324,8 @@ func (p *postgres) InsertWithdrawal(ctx context.Context, userID int, amount floa
 
 	_, err = p.db.ExecContext(
 		ctx,
-		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES ($1, $2, $3, $4);",
+		"INSERT INTO posting(user_id, journal_id, amount) VALUES ($1, $2, $3);",
 		userID,
-		orderID,
 		id,
 		-models.ToPoints(amount),
 	)
@@ -351,8 +350,7 @@ func (p *postgres) InsertWithdrawal(ctx context.Context, userID int, amount floa
 
 	_, err = p.db.ExecContext(
 		ctx,
-		"INSERT INTO posting(user_id, order_id, journal_id, amount) VALUES (1, $1, $2, $3);",
-		orderID,
+		"INSERT INTO posting(user_id, journal_id, amount) VALUES (1, $1, $2);",
 		id,
 		models.ToPoints(amount),
 	)

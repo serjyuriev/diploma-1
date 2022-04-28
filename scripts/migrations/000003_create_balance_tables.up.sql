@@ -9,7 +9,7 @@ CREATE SEQUENCE IF NOT EXISTS posting_id_seq;
 CREATE TABLE IF NOT EXISTS posting (
     id bigint NOT NULL DEFAULT nextval('posting_id_seq'),
     user_id integer NOT NULL,
-    order_id bigint NOT NULL,
+    order_id bigint,
     journal_id bigint NOT NULL,
     amount int NOT NULL,
     PRIMARY KEY (id),

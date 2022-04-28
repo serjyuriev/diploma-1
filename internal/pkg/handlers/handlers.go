@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -250,15 +249,13 @@ func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Requ
 	if err := h.svc.WithdrawPoints(r.Context(), userID, req.Sum, req.OrderNumber); err != nil {
 		if errors.Is(err, service.ErrNotEnoughPoints) {
 			w.WriteHeader(http.StatusPaymentRequired)
-			return
-		} else if errors.Is(err, sql.ErrNoRows) {
+		} else if errors.Is(err, service.ErrNotValidOrderNumber) {
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
 		} else {
 			h.logger.Err(err).Caller().Msg("unable to withdraw points")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
 		}
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 }

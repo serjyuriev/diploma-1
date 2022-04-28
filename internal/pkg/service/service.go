@@ -194,10 +194,9 @@ func (svc *service) CreateNewOrder(ctx context.Context, number string, userID in
 func (svc *service) WithdrawPoints(ctx context.Context, userID int, amount float64, order string) error {
 	svc.logger.Debug().Caller().Msgf("withdrawing %.2f points for order '%s' of user %d", amount, order, userID)
 
-	o, err := svc.repo.SelectOrderByNumber(ctx, order)
-	if err != nil {
-		svc.logger.Error().Caller().Msg("unable to find order with provided number")
-		return err
+	if !svc.validateOrderNumber(order) {
+		svc.logger.Warn().Caller().Msgf("order number %s is not valid", order)
+		return ErrNotValidOrderNumber
 	}
 
 	b, err := svc.repo.SelectBalanceByUser(ctx, userID)
@@ -210,7 +209,7 @@ func (svc *service) WithdrawPoints(ctx context.Context, userID int, amount float
 		return ErrNotEnoughPoints
 	}
 
-	if err := svc.repo.InsertWithdrawal(ctx, userID, amount, o.ID); err != nil {
+	if err := svc.repo.InsertWithdrawal(ctx, userID, amount); err != nil {
 		svc.logger.Error().Caller().Msg("unable to update user's balance in database")
 		return err
 	}
