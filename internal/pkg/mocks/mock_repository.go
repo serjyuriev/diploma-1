@@ -79,17 +79,17 @@ func (mr *MockRepositoryMockRecorder) InsertUser(ctx, user interface{}) *gomock.
 }
 
 // InsertWithdrawal mocks base method.
-func (m *MockRepository) InsertWithdrawal(ctx context.Context, userID int, amount float64, orderID int64) error {
+func (m *MockRepository) InsertWithdrawal(ctx context.Context, userID int, amount float64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertWithdrawal", ctx, userID, amount, orderID)
+	ret := m.ctrl.Call(m, "InsertWithdrawal", ctx, userID, amount)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // InsertWithdrawal indicates an expected call of InsertWithdrawal.
-func (mr *MockRepositoryMockRecorder) InsertWithdrawal(ctx, userID, amount, orderID interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) InsertWithdrawal(ctx, userID, amount interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertWithdrawal", reflect.TypeOf((*MockRepository)(nil).InsertWithdrawal), ctx, userID, amount, orderID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertWithdrawal", reflect.TypeOf((*MockRepository)(nil).InsertWithdrawal), ctx, userID, amount)
 }
 
 // SelectBalanceByUser mocks base method.
