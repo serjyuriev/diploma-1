@@ -139,7 +139,7 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 			)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 		} else if errors.Is(err, service.ErrOrderAddedByUser) {
-			h.logger.Warn().Caller().Str("order", string(body)).Msgf(
+			h.logger.Info().Caller().Str("order", string(body)).Msgf(
 				"POST /api/user/orders returned %d",
 				http.StatusOK,
 			)
@@ -157,7 +157,7 @@ func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.logger.Warn().Caller().Str("order", string(body)).Msgf(
+	h.logger.Info().Caller().Str("order", string(body)).Msgf(
 		"POST /api/user/orders returned %d",
 		http.StatusAccepted,
 	)
