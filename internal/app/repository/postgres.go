@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	STATUS_NEW        = "NEW"
-	STATUS_PROCESSING = "PROCESSING"
-	STATUS_INVALID    = "INVALID"
-	STATUS_PROCESSED  = "PROCESSED"
+	StatusNew        = "NEW"
+	StatusProcessing = "PROCESSING"
+	StatusInvalid    = "INVALID"
+	StatusProcessed  = "PROCESSED"
 )
 
 var (
@@ -126,7 +126,7 @@ func (p *postgres) InsertOrder(ctx context.Context, number string, userID int) (
 		"INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4) RETURNING id",
 		number,
 		userID,
-		STATUS_NEW,
+		StatusNew,
 		time.Now().Unix(),
 	)
 	if row.Err() != nil {
@@ -230,7 +230,7 @@ func (p *postgres) SelectOrdersByUser(ctx context.Context, userID int) ([]*model
 		}
 		order.UploadedAt = time.Unix(unixUploaded, 0)
 
-		if order.Status == STATUS_PROCESSED {
+		if order.Status == StatusProcessed {
 			row := p.db.QueryRowContext(
 				ctx,
 				"SELECT amount FROM posting WHERE order_id = $1;",
@@ -282,7 +282,7 @@ func (p *postgres) UpdateOrderStatus(ctx context.Context, number string, order *
 		Msg("updating order status in database")
 
 	var err error
-	if order.Status == STATUS_PROCESSING {
+	if order.Status == StatusProcessing {
 		_, err = p.db.ExecContext(
 			ctx,
 			"UPDATE orders SET status = $1 WHERE number = $2;",
