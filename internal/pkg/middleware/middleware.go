@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/serjyuriev/diploma-1/internal/pkg/handlers"
+	"github.com/rs/zerolog"
+	"github.com/serjyuriev/diploma-1/internal/app/handlers"
+	"github.com/serjyuriev/diploma-1/internal/pkg/config"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
 )
 
@@ -18,7 +20,23 @@ var (
 	ErrInvalidAccessToken = errors.New("invalid access token")
 )
 
-func Auth(next http.Handler) http.Handler {
+type Middleware interface {
+	Auth(next http.Handler) http.Handler
+}
+
+type middleware struct {
+	cfg    config.Config
+	logger zerolog.Logger
+}
+
+func NewMiddleware(logger zerolog.Logger) Middleware {
+	return &middleware{
+		cfg:    config.GetConfig(),
+		logger: logger,
+	}
+}
+
+func (m *middleware) Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/user/register" || r.URL.Path == "/api/user/login" {
 			next.ServeHTTP(w, r)
@@ -27,29 +45,58 @@ func Auth(next http.Handler) http.Handler {
 
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			// TODO: logging
+			m.logger.
+				Info().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Int("code", http.StatusUnauthorized).
+				Msg("request has no authorization headers")
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		headerSplitted := strings.Split(authHeader, " ")
 		if headerSplitted[0] != "Bearer" {
+			m.logger.
+				Info().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Int("code", http.StatusUnauthorized).
+				Msg("authorization method is not valid")
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		// TODO: signingKey in Config
-		userID, err := parseToken(headerSplitted[1], []byte("gopherkey"))
+		userID, err := parseToken(headerSplitted[1], []byte(m.cfg.SigningKey))
 		if err != nil {
 			if errors.Is(err, ErrInvalidAccessToken) {
+				m.logger.
+					Info().
+					Str("method", r.Method).
+					Str("path", r.URL.Path).
+					Int("code", http.StatusUnauthorized).
+					Msg("provided token is not valid")
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
 				return
 			}
 
+			m.logger.
+				Err(err).
+				Caller().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Int("code", http.StatusInternalServerError).
+				Msg("unexpected error occured while processing JWT token")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 
+		m.logger.
+			Debug().
+			Str("method", r.Method).
+			Str("path", r.URL.Path).
+			Int("user_id", userID).
+			Msg("user was authorized")
 		ctx := context.WithValue(r.Context(), contextKeyUID, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

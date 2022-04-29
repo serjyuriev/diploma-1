@@ -3,15 +3,19 @@ package config
 import (
 	"log"
 	"sync"
+	"time"
 
 	"github.com/caarlos0/env"
 )
 
 type Config struct {
-	RunAddress                string `env:"RUN_ADDRESS"`
-	DatabaseURI               string `env:"DATABASE_URI"`
-	AccrualSystemAddress      string `env:"ACCRUAL_SYSTEM_ADDRESS"`
-	AccrualSystemSurveyPeriod int    `env:"ACCRUAL_SYSTEM_SURVEY_PERIOD" envDefault:"2"`
+	RunAddress                 string `env:"RUN_ADDRESS"`
+	DatabaseURI                string `env:"DATABASE_URI"`
+	AccrualSystemAddress       string `env:"ACCRUAL_SYSTEM_ADDRESS"`
+	AccrualSystemPollPeriodInt int    `env:"ACCRUAL_SYSTEM_POLL_PERIOD" envDefault:"2"`
+	AccrualSystemPollPeriod    time.Duration
+	MigrationsScriptsPath      string `env:"MIGRATION_SCRIPTS_PATH" envDefault:"file://scripts/migrations/"`
+	SigningKey                 string `env:"SIGNING_KEY" envDefault:"gopherkey"`
 }
 
 var (
@@ -33,6 +37,8 @@ func GetConfig() Config {
 			// flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "address of accrual system")
 			// flag.Parse()
 		}
+
+		cfg.AccrualSystemPollPeriod = time.Duration(cfg.AccrualSystemPollPeriodInt) * time.Second
 
 		log.Printf("%v\n", cfg)
 	})

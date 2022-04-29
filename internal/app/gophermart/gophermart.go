@@ -1,4 +1,4 @@
-package app
+package gophermart
 
 import (
 	"net/http"
@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
+	"github.com/serjyuriev/diploma-1/internal/app/handlers"
 	"github.com/serjyuriev/diploma-1/internal/pkg/config"
-	"github.com/serjyuriev/diploma-1/internal/pkg/handlers"
 	"github.com/serjyuriev/diploma-1/internal/pkg/middleware"
 )
 
@@ -19,6 +19,7 @@ type app struct {
 	cfg      config.Config
 	handlers handlers.Handlers
 	logger   zerolog.Logger
+	mw       middleware.Middleware
 }
 
 func NewApp() (App, error) {
@@ -37,12 +38,13 @@ func NewApp() (App, error) {
 		cfg:      config.GetConfig(),
 		handlers: handlers,
 		logger:   logger,
+		mw:       middleware.NewMiddleware(logger),
 	}, nil
 }
 
 func (app *app) Start() error {
 	r := chi.NewRouter()
-	r.Use(middleware.Auth)
+	r.Use(app.mw.Auth)
 	r.Post("/api/user/register", app.handlers.RegisterUserHandler)
 	r.Post("/api/user/login", app.handlers.LoginUserHandler)
 	r.Post("/api/user/orders", app.handlers.PostUserOrderHandler)
@@ -51,6 +53,9 @@ func (app *app) Start() error {
 	r.Post("/api/user/balance/withdraw", app.handlers.WithdrawUserPointsHandler)
 	r.Get("/api/user/balance/withdrawals", app.handlers.GetUserWithdrawalsHandler)
 
-	app.logger.Info().Caller().Msgf("starting application on %s", app.cfg.RunAddress)
+	app.logger.
+		Info().
+		Str("run_address", app.cfg.RunAddress).
+		Msg("starting application")
 	return http.ListenAndServe(app.cfg.RunAddress, r)
 }

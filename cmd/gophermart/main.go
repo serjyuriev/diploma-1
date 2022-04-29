@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/serjyuriev/diploma-1/internal/app"
+	"github.com/serjyuriev/diploma-1/internal/app/gophermart"
 )
 
 func main() {
@@ -12,7 +12,7 @@ func main() {
 			log.Println(r)
 		}
 	}()
-	app, err := app.NewApp()
+	app, err := gophermart.NewApp()
 	if err != nil {
 		log.Printf("unable to initialized new app: %v", err)
 	}

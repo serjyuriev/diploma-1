@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/serjyuriev/diploma-1/internal/app/repository"
+	"github.com/serjyuriev/diploma-1/internal/app/service"
 	"github.com/serjyuriev/diploma-1/internal/pkg/models"
-	"github.com/serjyuriev/diploma-1/internal/pkg/repository"
-	"github.com/serjyuriev/diploma-1/internal/pkg/service"
 )
 
 type ContextKey string
@@ -57,17 +57,25 @@ func MakeHandlers(logger zerolog.Logger) (Handlers, error) {
 }
 
 func (h *handlers) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info().Caller().Msg("POST /api/user/register")
+	h.logger.Info().Msg("POST /api/user/register")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to read request body")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("code", http.StatusBadRequest).
+			Msg("unable to read request body")
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	user := new(models.User)
 	if err := json.Unmarshal(body, user); err != nil {
-		h.logger.Err(err).Caller().Msg("unable to map json to user")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("code", http.StatusBadRequest).
+			Msg("unable to map json to user")
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
@@ -75,32 +83,55 @@ func (h *handlers) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := h.svc.RegisterUser(r.Context(), user)
 	if err != nil {
 		if errors.Is(err, service.ErrNotRegistered) {
-			h.logger.Err(err).Caller().Msg("unable to login just registered user")
+			h.logger.
+				Err(err).
+				Caller().
+				Str("user", user.Login).
+				Int("code", http.StatusInternalServerError).
+				Msg("unable to login just registered user")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		h.logger.Err(err).Caller().Msg("unable to register user")
+		h.logger.
+			Err(err).
+			Caller().
+			Str("user", user.Login).
+			Int("code", http.StatusInternalServerError).
+			Msg("unable to register user")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	w.WriteHeader(http.StatusOK)
+	h.logger.
+		Info().
+		Str("user", user.Login).
+		Int("code", http.StatusOK).
+		Msg("POST /api/user/register")
 }
 
 func (h *handlers) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info().Caller().Msg("POST /api/user/login")
+	h.logger.Info().Msg("POST /api/user/login")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to read request body")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("code", http.StatusBadRequest).
+			Msg("unable to read request body")
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	user := new(models.User)
 	if err := json.Unmarshal(body, user); err != nil {
-		h.logger.Err(err).Caller().Msg("unable to map json to user")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("code", http.StatusBadRequest).
+			Msg("unable to map json to user")
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
@@ -108,72 +139,116 @@ func (h *handlers) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := h.svc.LoginUser(r.Context(), user)
 	if err != nil {
 		if errors.Is(err, service.ErrNotRegistered) {
+			h.logger.
+				Info().
+				Str("user", user.Login).
+				Int("code", http.StatusUnauthorized).
+				Msg("user is not registered")
 			http.Error(w, "", http.StatusUnauthorized)
 			return
 		}
 
-		h.logger.Err(err).Caller().Msg("unable to login user")
-		http.Error(w, "internal server error", http.StatusUnauthorized)
+		h.logger.
+			Err(err).
+			Caller().
+			Str("user", user.Login).
+			Int("code", http.StatusInternalServerError).
+			Msg("unexpected error occured while trying to log user in")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	w.WriteHeader(http.StatusOK)
+	h.logger.
+		Info().
+		Str("user", user.Login).
+		Int("code", http.StatusOK).
+		Msg("POST /api/user/login")
 }
 
 func (h *handlers) PostUserOrderHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(ContextKey("user_id")).(int)
-	h.logger.Info().Caller().Int("user", userID).Msg("POST /api/user/orders")
+	h.logger.Info().Int("user_id", userID).Msg("POST /api/user/orders")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to read request body")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusBadRequest).
+			Msg("unable to read request body")
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	if err := h.svc.CreateNewOrder(context.Background(), string(body), userID); err != nil {
 		if errors.Is(err, service.ErrNotValidOrderNumber) {
-			h.logger.Warn().Caller().Str("order", string(body)).Msgf(
-				"POST /api/user/orders returned %d",
-				http.StatusUnprocessableEntity,
-			)
+			h.logger.
+				Info().
+				Str("order_number", string(body)).
+				Int("user_id", userID).
+				Int("code", http.StatusUnprocessableEntity).
+				Msg("order number is not valid")
 			w.WriteHeader(http.StatusUnprocessableEntity)
 		} else if errors.Is(err, service.ErrOrderAddedByUser) {
-			h.logger.Info().Caller().Str("order", string(body)).Msgf(
-				"POST /api/user/orders returned %d",
-				http.StatusOK,
-			)
+			h.logger.
+				Info().
+				Str("order_number", string(body)).
+				Int("user_id", userID).
+				Int("code", http.StatusOK).
+				Msg("order already added by user")
 			w.WriteHeader(http.StatusOK)
 		} else if errors.Is(err, service.ErrOrderAddedByAnotherUser) {
-			h.logger.Warn().Caller().Str("order", string(body)).Msgf(
-				"POST /api/user/orders returned %d",
-				http.StatusConflict,
-			)
+			h.logger.
+				Info().
+				Str("order_number", string(body)).
+				Int("user_id", userID).
+				Int("code", http.StatusConflict).
+				Msg("order already added by another user")
 			w.WriteHeader(http.StatusConflict)
 		} else {
-			h.logger.Error().Caller().Str("order", string(body)).Msg("unable to create new order")
+			h.logger.
+				Error().
+				Caller().
+				Str("order_number", string(body)).
+				Int("user_id", userID).
+				Int("code", http.StatusInternalServerError).
+				Msg("unable to create new order")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	h.logger.Info().Caller().Str("order", string(body)).Msgf(
-		"POST /api/user/orders returned %d",
-		http.StatusAccepted,
-	)
 	w.WriteHeader(http.StatusAccepted)
+	h.logger.
+		Info().
+		Str("order_number", string(body)).
+		Int("user_id", userID).
+		Int("code", http.StatusAccepted).
+		Msg("POST /api/user/orders")
 }
 
 func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(ContextKey("user_id")).(int)
-	h.logger.Info().Caller().Int("user", userID).Msg("GET /api/user/orders")
+	h.logger.Info().Int("user_id", userID).Msg("GET /api/user/orders")
 	orders, err := h.repo.SelectOrdersByUser(r.Context(), userID)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to get user orders")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusInternalServerError).
+			Msg("unable to select orders from database")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	if len(orders) == 0 {
+		h.logger.
+			Info().
+			Int("user_id", userID).
+			Int("code", http.StatusNoContent).
+			Msg("there is no user orders in system")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -186,28 +261,41 @@ func (h *handlers) GetUserOrdersHandler(w http.ResponseWriter, r *http.Request) 
 			Accrual:    order.Accrual.Float64(),
 			UploadedAt: order.UploadedAt.Format(time.RFC3339),
 		}
-
 		res = append(res, sr)
 	}
 
 	json, err := json.Marshal(res)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to marshal response")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusInternalServerError).
+			Msg("unable to marshal response")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info().Caller().Int("user", userID).Msg(string(json))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
+	h.logger.
+		Info().
+		Int("user_id", userID).
+		Int("code", http.StatusOK).
+		Msg("GET /api/user/orders")
 }
 
 func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info().Caller().Msg("GET /api/user/balance")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
+	h.logger.Info().Int("user_id", userID).Msg("GET /api/user/balance")
 	b, err := h.repo.SelectBalanceByUser(r.Context(), userID)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to get user balance")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusInternalServerError).
+			Msg("unable to select balance from database")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -219,58 +307,111 @@ func (h *handlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request)
 
 	json, err := json.Marshal(res)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to marshal response")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusInternalServerError).
+			Msg("unable to marshal response")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
+	h.logger.
+		Info().
+		Int("user_id", userID).
+		Int("code", http.StatusOK).
+		Msg("GET /api/user/balance")
 }
 
 func (h *handlers) WithdrawUserPointsHandler(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info().Caller().Msg("POST /api/user/balance/withdraw")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
-
+	h.logger.Info().Int("user_id", userID).Msg("POST /api/user/balance/withdraw")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to read request body")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusBadRequest).
+			Msg("unable to read request body")
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	req := new(withdrawUserPointsRequest)
 	if err := json.Unmarshal(body, req); err != nil {
-		h.logger.Err(err).Caller().Msg("unable to unmarshal request body")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusBadRequest).
+			Msg("unable to unmarshal request body")
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	if err := h.svc.WithdrawPoints(r.Context(), userID, req.Sum, req.OrderNumber); err != nil {
 		if errors.Is(err, service.ErrNotEnoughPoints) {
+			h.logger.
+				Info().
+				Str("order_number", req.OrderNumber).
+				Int("user_id", userID).
+				Int("code", http.StatusPaymentRequired).
+				Msg("user does not have enough points")
 			w.WriteHeader(http.StatusPaymentRequired)
 		} else if errors.Is(err, service.ErrNotValidOrderNumber) {
+			h.logger.
+				Info().
+				Str("order_number", req.OrderNumber).
+				Int("user_id", userID).
+				Int("code", http.StatusUnprocessableEntity).
+				Msg("order number is not valid")
 			w.WriteHeader(http.StatusUnprocessableEntity)
 		} else {
-			h.logger.Err(err).Caller().Msg("unable to withdraw points")
+			h.logger.
+				Err(err).
+				Caller().
+				Str("order_number", req.OrderNumber).
+				Int("user_id", userID).
+				Int("code", http.StatusInternalServerError).
+				Msg("unable to withdraw points")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	h.logger.
+		Info().
+		Str("order_number", req.OrderNumber).
+		Int("user_id", userID).
+		Int("code", http.StatusOK).
+		Msg("POST /api/user/balance/withdraw")
 }
 
 func (h *handlers) GetUserWithdrawalsHandler(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info().Caller().Msg("GET /api/user/balance/withdrawals")
 	userID := r.Context().Value(ContextKey("user_id")).(int)
+	h.logger.Info().Int("user_id", userID).Msg("GET /api/user/balance/withdrawals")
 	withdrawals, err := h.repo.SelectWithdrawalsByUser(r.Context(), userID)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to get user withdrawals")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusInternalServerError).
+			Msg("unable to get user withdrawals")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	if len(withdrawals) == 0 {
+		h.logger.
+			Info().
+			Int("user_id", userID).
+			Int("code", http.StatusNoContent).
+			Msg("user does not have any withdrawals")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -282,19 +423,28 @@ func (h *handlers) GetUserWithdrawalsHandler(w http.ResponseWriter, r *http.Requ
 			Sum:         withdrawal.Sum.Float64(),
 			ProcessedAt: withdrawal.ProcessedAt.Format(time.RFC3339),
 		}
-
 		res = append(res, sr)
 	}
 
 	json, err := json.Marshal(res)
 	if err != nil {
-		h.logger.Err(err).Caller().Msg("unable to marshal response")
+		h.logger.
+			Err(err).
+			Caller().
+			Int("user_id", userID).
+			Int("code", http.StatusInternalServerError).
+			Msg("unable to marshal response")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.Write(json)
+	h.logger.
+		Info().
+		Int("user_id", userID).
+		Int("code", http.StatusOK).
+		Msg("GET /api/user/balance/withdrawals")
 }
 
 type getUserBalanceResponse struct {

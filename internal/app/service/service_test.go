@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/rs/zerolog"
@@ -62,8 +63,8 @@ func Test_CreateNewOrder(t *testing.T) {
 
 	svc := &service{
 		config: config.Config{
-			DatabaseURI:               "postgres://gopher:G0ph3R@localhost:5432/gophermart",
-			AccrualSystemSurveyPeriod: 5,
+			DatabaseURI:             "postgres://gopher:G0ph3R@localhost:5432/gophermart",
+			AccrualSystemPollPeriod: 2 * time.Second,
 		},
 		logger:  logger,
 		accrual: ma,

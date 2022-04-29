@@ -35,6 +35,7 @@ func NewAccrualClient(logger zerolog.Logger) Accrual {
 }
 
 func (a *accrual) GetOrderStatus(ctx context.Context, order string) (*models.Order, error) {
+	a.logger.Debug().Str("order_number", order).Msg("polling accrual system")
 	client := http.Client{}
 	accrualRequestURL := fmt.Sprintf("%s/api/orders/%s", a.systemURL, order)
 
@@ -44,39 +45,70 @@ func (a *accrual) GetOrderStatus(ctx context.Context, order string) (*models.Ord
 		nil,
 	)
 	if err != nil {
-		a.logger.Error().Caller().Msg("unable to create new request")
+		a.logger.
+			Error().
+			Caller().
+			Str("order_number", order).
+			Msg("unable to create new request")
 		return nil, err
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		a.logger.Error().Caller().Msg("unable to send request to accrual system")
+		a.logger.
+			Error().
+			Caller().
+			Str("order_number", order).
+			Msg("unable to send request to accrual system")
 		return nil, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusTooManyRequests {
-		a.logger.Error().Caller().Msg("too many requests to accrual system")
+		a.logger.
+			Error().
+			Caller().
+			Str("order_number", order).
+			Int("accrual_code", http.StatusTooManyRequests).
+			Msg("too many requests to accrual system")
 		return nil, errAccrualTooManyRequests
 	} else if res.StatusCode == http.StatusInternalServerError {
-		a.logger.Error().Caller().Msg("accrual system internal error occured")
+		a.logger.
+			Error().
+			Caller().
+			Str("order_number", order).
+			Int("accrual_code", http.StatusInternalServerError).
+			Msg("accrual system internal error occured")
 		return nil, errAccrualInternal
 	} else {
-		a.logger.Info().Caller().Msgf("accrual system responded with code %d", res.StatusCode)
+		a.logger.
+			Debug().
+			Str("order_number", order).
+			Int("accrual_code", res.StatusCode).
+			Msgf("accrual system responded", res.StatusCode)
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		a.logger.Error().Caller().Msg("unable to read response body")
+		a.logger.
+			Error().
+			Caller().
+			Str("order_number", order).
+			Msg("unable to read response body")
 		return nil, err
 	}
 
 	accrualResponse := new(accrualResponse)
 	if err = json.Unmarshal(body, &accrualResponse); err != nil {
-		a.logger.Error().Caller().Msg("unable to unmarshal accrual system response")
+		a.logger.
+			Error().
+			Caller().
+			Str("order_number", order).
+			Msg("unable to unmarshal accrual system response")
 		return nil, err
 	}
 
+	a.logger.Debug().Str("order_number", order).Msg("accrual system was polled")
 	return &models.Order{
 		Number:        accrualResponse.Order,
 		AccrualStatus: accrualResponse.Status,
