@@ -85,7 +85,7 @@ func (a *accrual) GetOrderStatus(ctx context.Context, order string) (*models.Ord
 			Debug().
 			Str("order_number", order).
 			Int("accrual_code", res.StatusCode).
-			Msgf("accrual system responded", res.StatusCode)
+			Msg("accrual system responded")
 	}
 
 	body, err := io.ReadAll(res.Body)
