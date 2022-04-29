@@ -37,7 +37,7 @@ type postgres struct {
 // of Repository interface.
 func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	cfg := config.GetConfig()
-	logger.Info().Msg("creating postgres repository")
+	logger.Debug().Msg("creating postgres repository")
 	db, err := sql.Open("pgx", cfg.DatabaseURI)
 	if err != nil {
 		logger.Error().Caller().Msg("unable to open sql connection")
@@ -61,8 +61,7 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 	}
 
 	logger.Debug().Msg("trying to apply migrations")
-	logger.Debug().Str("result", m.Up().Error())
-	logger.Info().Msg("postgres repository initialized")
+	logger.Debug().Str("result", m.Up().Error()).Msg("postgres repository initialized")
 
 	return &postgres{
 		cfg:    cfg,
@@ -533,14 +532,19 @@ func (p *postgres) InsertAccrual(ctx context.Context, userID int, amount float64
 // SelectWithdrawalsByUser gather order's number, sum and time of processing
 // for provided user ID.
 func (p *postgres) SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*models.Order, error) {
-	p.logger.Debug().Caller().Msgf("selecting withdrawals for user '%d'", userID)
+	p.logger.Debug().Int("user_id", userID).Msg("selecting withdrawals from database")
 
-	rows, err := p.db.Query(
+	rows, err := p.db.QueryContext(
+		ctx,
 		"SELECT o.number, ABS(p.amount), o.processed_at FROM posting AS p INNER JOIN orders AS o ON p.order_id = o.id WHERE p.user_id = $1 AND p.journal_id IN (SELECT id FROM balance_journal WHERE type = 'withdrawal');",
 		userID,
 	)
 	if err != nil {
-		p.logger.Error().Caller().Msg("unable to execute query")
+		p.logger.
+			Error().
+			Caller().
+			Int("user_id", userID).
+			Msg("unable to execute query")
 		return nil, rows.Err()
 	}
 
@@ -549,7 +553,11 @@ func (p *postgres) SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*
 		order := new(models.Order)
 		var unixProcessed int64
 		if err := rows.Scan(&order.Number, &order.Sum, &unixProcessed); err != nil {
-			p.logger.Error().Caller().Msg("unable to scan query result")
+			p.logger.
+				Error().
+				Caller().
+				Int("user_id", userID).
+				Msg("unable to scan query result")
 			return nil, err
 		}
 		order.ProcessedAt = time.Unix(unixProcessed, 0)
@@ -557,7 +565,11 @@ func (p *postgres) SelectWithdrawalsByUser(ctx context.Context, userID int) ([]*
 	}
 
 	if rows.Err() != nil {
-		p.logger.Error().Caller().Msg("unable to execute query")
+		p.logger.
+			Error().
+			Caller().
+			Int("user_id", userID).
+			Msg("unable to execute query")
 		return nil, rows.Err()
 	}
 

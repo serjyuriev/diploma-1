@@ -39,8 +39,6 @@ func GetConfig() Config {
 		}
 
 		cfg.AccrualSystemPollPeriod = time.Duration(cfg.AccrualSystemPollPeriodInt) * time.Second
-
-		log.Printf("%v\n", cfg)
 	})
 
 	return *cfg

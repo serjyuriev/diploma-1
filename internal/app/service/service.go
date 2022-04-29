@@ -47,13 +47,12 @@ type service struct {
 	repo           repository.Repository
 	jobChan        chan *job
 	hashSalt       string
-	signingKey     []byte
 	expireDuration time.Duration
 }
 
 // NewService creates new instance of service structure.
 func NewService(logger zerolog.Logger, repo repository.Repository) (Service, error) {
-	logger.Debug().Caller().Msg("initializing service")
+	logger.Debug().Msg("initializing service")
 	svc := &service{
 		config:         config.GetConfig(),
 		accrual:        accrual.NewAccrualClient(logger),
@@ -61,7 +60,6 @@ func NewService(logger zerolog.Logger, repo repository.Repository) (Service, err
 		repo:           repo,
 		jobChan:        make(chan *job),
 		hashSalt:       "gopher",
-		signingKey:     []byte("gopherkey"),
 		expireDuration: 10 * time.Minute,
 	}
 	svc.polling(5)
@@ -118,7 +116,7 @@ func (svc *service) LoginUser(ctx context.Context, user *models.User) (string, e
 		)
 
 		svc.logger.Debug().Str("user", user.Login).Msg("user logged in")
-		return token.SignedString(svc.signingKey)
+		return token.SignedString([]byte(svc.config.SigningKey))
 	}
 
 	svc.logger.Info().Str("user", user.Login).Msg("unsuccessful attempt to login")
