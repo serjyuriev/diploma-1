@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:14.2
+    container_name: postgres
+    environment:
+      POSTGRES_DB: "gophermart"
+      POSTGRES_USER: "gopher"
+      POSTGRES_PASSWORD: "G0ph3R"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - .:/var/lib/postgresql/data
+  gophermart:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: gophermart
+    environment:
+      RUN_ADDRESS: gophermart:8080
+      DATABASE_NAME: gophermart
+      DATABASE_URI: postgres://gopher:G0ph3R@postgres:5432/gophermart
+      ACCRUAL_SYSTEM_ADDRESS: accrual:8080
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres

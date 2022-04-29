@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS login_idx;
+DROP TABLE IF EXISTS users;
+DROP SEQUENCE IF EXISTS user_id_seq;
