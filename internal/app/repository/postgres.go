@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -52,7 +51,7 @@ func NewPostgres(logger zerolog.Logger) (Repository, error) {
 
 	m, err := migrate.NewWithDatabaseInstance(
 		cfg.MigrationsScriptsPath,
-		strings.Split(cfg.DatabaseURI, "/")[3],
+		cfg.DatabaseName,
 		driver,
 	)
 	if err != nil {

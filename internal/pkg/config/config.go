@@ -16,6 +16,7 @@ type Config struct {
 	AccrualSystemPollPeriod    time.Duration
 	MigrationsScriptsPath      string `env:"MIGRATION_SCRIPTS_PATH" envDefault:"file://scripts/migrations/"`
 	SigningKey                 string `env:"SIGNING_KEY" envDefault:"gopherkey"`
+	DatabaseName               string `env:"DATABASE_NAME" envDefault:"praktikum"`
 }
 
 var (

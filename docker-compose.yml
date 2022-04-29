@@ -17,6 +17,7 @@ services:
     container_name: gophermart
     environment:
       RUN_ADDRESS: gophermart:8080
+      DATABASE_NAME: gophermart
       DATABASE_URI: postgres://gopher:G0ph3R@postgres:5432/gophermart
       ACCRUAL_SYSTEM_ADDRESS: accrual:8080
     ports:
